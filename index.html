@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibPro Enterprise | v44.5 Advanced ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        :root { --primary: #4f46e5; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; transition: 0.3s; scroll-behavior: smooth; }
+        .dark { background-color: #020617; color: #f8fafc; }
+        .dark .bg-white { background-color: #0f172a; border-color: #1e293b; }
+        .view-section { display: none; animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .view-section.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .seat-card { transition: all 0.3s ease; cursor: pointer; position: relative; }
+        .seat-card:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+        .seat-card.occupied { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; }
+        .seat-card.full-day { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; }
+        .seat-card.available { background: white; border: 2px dashed #cbd5e1; color: #94a3b8; }
+        .seat-card.available:hover { border-color: #818cf8; color: #6366f1; background: #eef2ff; }
+        .seat-card.expiring { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; animation: blink 2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); } }
+
+        #floating-menu { transform: scale(0.9) translateY(-10px); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; }
+        #floating-menu.active { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+        
+        #loader { display: flex; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        #camera-wrapper { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 600; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        #camera-video { width: 85%; max-width: 400px; border-radius: 2rem; border: 4px solid #4f46e5; box-shadow: 0 0 40px rgba(79, 70, 229, 0.3); }
+
+        /* Toast Animation */
+        @keyframes toastEnter { from { opacity: 0; transform: translateY(100%) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes toastLeave { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(100%) scale(0.9); } }
+        .toast-enter { animation: toastEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .toast-leave { animation: toastLeave 0.3s ease-in forwards; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 overflow-x-hidden">
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[1000] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div id="loader" class="fixed inset-0 z-[700] bg-white flex flex-col items-center justify-center">
+        <div class="relative w-16 h-16">
+            <div class="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p class="mt-6 font-black text-indigo-600 text-xs tracking-[0.4em] uppercase">Initializing Core...</p>
+    </div>
+
+    <div id="auth-layer" class="fixed inset-0 z-[400] bg-gradient-to-br from-indigo-600 to-indigo-900 flex items-center justify-center p-6 hidden">
+        <div id="login-card" class="max-w-md w-full bg-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-emerald-500"></div>
+            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center mb-6"><i data-lucide="zap" class="w-8 h-8"></i></div>
+            <h2 class="text-3xl font-black text-center text-slate-800 mb-8 tracking-tight">LibPro ERP</h2>
+            <div class="space-y-5">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none"><i data-lucide="mail" class="w-5 h-5 text-slate-400"></i></div>
+                    <input type="email" id="login-email" class="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all font-bold text-sm" placeholder="Email Address">
+                </div>
+                <div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none"><i data-lucide="lock" class="w-5 h-5 text-slate-400"></i></div>
+                        <input type="password" id="login-pass" class="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all font-bold text-sm" placeholder="Password">
+                    </div>
+                    <div class="flex justify-end mt-3">
+                        <button onclick="switchAuth('reset')" class="text-xs text-indigo-600 font-bold hover:text-indigo-800 transition">Forgot Password?</button>
+                    </div>
+                </div>
+                <button onclick="handleLogin()" class="w-full py-4 mt-2 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2">Access Dashboard <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+            </div>
+            <button onclick="switchAuth('signup')" class="w-full text-slate-500 text-sm font-bold mt-8 text-center hover:text-indigo-600 transition">New Library? <span class="text-indigo-600 underline">Register Here</span></button>
+        </div>
+
+        <div id="signup-card" class="hidden max-w-xl w-full bg-white p-10 rounded-[3rem] shadow-2xl overflow-y-auto max-h-[90vh] custom-scrollbar">
+            <h2 class="text-2xl font-black text-center mb-2">Cloud Registration</h2>
+            <p class="text-xs text-center text-slate-400 font-bold mb-8 uppercase tracking-widest">Setup Your Library</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="md:col-span-2"><input type="text" id="reg-owner" class="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm outline-none focus:border-indigo-500" placeholder="Owner Full Name"></div>
+                <div class="md:col-span-2"><input type="text" id="reg-lib-name" class="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm outline-none focus:border-indigo-500" placeholder="Library Brand Name"></div>
+                <div><input type="email" id="reg-email" class="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm outline-none focus:border-indigo-500" placeholder="Email Address"></div>
+                <div><input type="text" id="reg-phone" class="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm outline-none focus:border-indigo-500" placeholder="Phone Number"></div>
+                <div class="md:col-span-2"><input type="password" id="reg-pass" class="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm outline-none focus:border-indigo-500" placeholder="Create Password"></div>
+                <button onclick="handleSignup()" class="md:col-span-2 py-4 mt-4 bg-slate-900 text-white font-black rounded-2xl shadow-xl hover:bg-black active:scale-95 transition-all">Initialize System</button>
+            </div>
+            <button onclick="switchAuth('login')" class="w-full text-center text-sm font-bold text-slate-400 mt-6 hover:text-indigo-600 transition"><i data-lucide="arrow-left" class="w-4 h-4 inline align-middle"></i> Back to Login</button>
+        </div>
+
+        <div id="reset-card" class="hidden max-w-md w-full bg-white p-10 rounded-[3rem] shadow-2xl">
+            <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl mx-auto flex items-center justify-center mb-6"><i data-lucide="key" class="w-8 h-8"></i></div>
+            <h2 class="text-3xl font-black text-center text-slate-800 mb-4 tracking-tight">Recovery</h2>
+            <p class="text-xs text-center text-slate-500 mb-8 font-bold leading-relaxed">Enter your registered email to receive a secure password reset link.</p>
+            <div class="space-y-5">
+                <input type="email" id="reset-email" class="w-full px-5 py-4 bg-slate-50 border rounded-2xl outline-none focus:border-rose-500 font-bold text-sm" placeholder="Registered Email">
+                <button onclick="handlePasswordReset()" class="w-full py-4 bg-rose-500 text-white font-black rounded-2xl shadow-lg shadow-rose-200 active:scale-95 transition-all hover:bg-rose-600">Send Reset Link</button>
+            </div>
+            <button onclick="switchAuth('login')" class="w-full text-center text-sm font-bold text-slate-400 mt-8 hover:text-rose-500 transition">Back to Login</button>
+        </div>
+    </div>
+
+    <div id="app-shell" class="hidden flex flex-col h-screen overflow-hidden">
+        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 md:px-10 z-40 shadow-sm">
+            <div class="flex items-center gap-4 hover:opacity-80 transition cursor-pointer" onclick="navTo('dashboard')">
+                <div id="main-header-logo" class="w-11 h-11 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl text-white shadow-lg flex items-center justify-center overflow-hidden"><i data-lucide="zap" class="w-5 h-5"></i></div>
+                <div><span id="header-lib-name" class="text-xl font-black block tracking-tight text-slate-800">LibPro</span><span class="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500">Enterprise v44.5</span></div>
+            </div>
+            <div class="flex items-center gap-3 md:gap-5">
+                <div class="relative">
+                    <button onclick="toggleMenu()" class="p-3 bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-full transition-all duration-300 border border-slate-200 hover:border-indigo-200"><i data-lucide="grid" class="w-5 h-5"></i></button>
+                    <div id="floating-menu" class="absolute right-0 mt-4 w-64 bg-white border border-slate-100 rounded-[2rem] shadow-2xl p-3 space-y-1">
+                        <button onclick="navTo('dashboard')" class="w-full flex items-center gap-3 px-4 py-3.5 text-indigo-600 bg-indigo-50 rounded-2xl font-bold transition"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</button>
+                        <button onclick="navTo('seats')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="armchair" class="w-5 h-5"></i> Seat Matrix</button>
+                        <button onclick="navTo('members')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="users" class="w-5 h-5"></i> Members Hub</button>
+                        <button onclick="navTo('billing')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="receipt" class="w-5 h-5"></i> Payment Ledger</button>
+                        <button onclick="navTo('revenue-analytics')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-emerald-50 rounded-2xl font-bold text-emerald-600 transition"><i data-lucide="trending-up" class="w-5 h-5"></i> Financials</button>
+                        <button onclick="navTo('settings')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="settings" class="w-5 h-5"></i> Settings</button>
+                        <div class="h-px bg-slate-100 my-2 mx-2"></div>
+                        <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3.5 text-rose-500 font-bold hover:bg-rose-50 rounded-2xl transition"><i data-lucide="log-out" class="w-5 h-5"></i> Logout System</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10 bg-slate-50/50 custom-scrollbar relative">
+            
+            <section id="view-dashboard" class="view-section active max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-slate-800">Hub Analytics</h2>
+                        <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Real-time Library Overview</p>
+                    </div>
+                    <button onclick="navTo('revenue-analytics')" class="bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black shadow-lg shadow-emerald-200 flex items-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all"><i data-lucide="bar-chart-3" class="w-5 h-5"></i> Full Reports</button>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition"><div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4"><i data-lucide="users" class="w-5 h-5"></i></div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Members</p><h3 class="text-4xl font-black text-slate-800" id="stat-members">0</h3></div>
+                    <div class="bg-white p-6 rounded-[2rem] border border-emerald-100 shadow-sm hover:shadow-md transition"><div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4"><i data-lucide="indian-rupee" class="w-5 h-5"></i></div><p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Total Revenue</p><h3 class="text-4xl font-black text-emerald-600" id="stat-revenue">₹0</h3></div>
+                    <div class="bg-white p-6 rounded-[2rem] border border-blue-100 shadow-sm hover:shadow-md transition"><div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4"><i data-lucide="armchair" class="w-5 h-5"></i></div><p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Shift Load</p><h3 class="text-4xl font-black text-blue-600" id="stat-seats">0/0</h3></div>
+                    <div class="bg-white p-6 rounded-[2rem] border border-rose-100 shadow-sm hover:shadow-md transition"><div class="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center mb-4"><i data-lucide="alert-circle" class="w-5 h-5"></i></div><p class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Pending Dues</p><h3 class="text-4xl font-black text-rose-500" id="stat-dues">₹0</h3></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm h-[420px] flex flex-col">
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="font-black text-slate-800 text-lg">Revenue Flow (Last 7 Days)</h4>
+                            <span class="text-[9px] bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full font-black uppercase tracking-widest flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live Data</span>
+                        </div>
+                        <div class="flex-1 relative w-full h-full"><canvas id="revChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm h-[420px] overflow-hidden flex flex-col">
+                        <h4 class="font-black text-lg mb-2 flex items-center gap-2 text-slate-800">Expiring Soon</h4>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Action Required</p>
+                        <div id="expiry-list" class="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-members" class="view-section max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-slate-800">Members Directory</h2>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div class="relative flex-1 sm:w-72">
+                            <i data-lucide="search" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input type="text" id="member-search" placeholder="Search by name or phone..." oninput="renderMembers()" class="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all shadow-sm">
+                        </div>
+                        <button onclick="openMemberModal()" class="bg-indigo-600 text-white px-6 py-3.5 rounded-2xl font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2"><i data-lucide="user-plus" class="w-5 h-5"></i> New Member</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 overflow-x-auto shadow-sm">
+                    <table class="w-full text-left text-sm min-w-[900px]">
+                        <thead class="bg-slate-50/50 border-b border-slate-100"><tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest"><th class="px-8 py-6">Member Identity</th><th class="px-8 py-6">Allocation</th><th class="px-8 py-6">Duration & Status</th><th class="px-8 py-6 text-right">Quick Actions</th></tr></thead>
+                        <tbody id="member-list" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-billing" class="view-section max-w-7xl mx-auto">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-slate-800">Payment Ledger</h2>
+                    </div>
+                    <button onclick="openManualInvoiceModal()" class="bg-slate-900 text-white px-6 py-3.5 rounded-2xl font-black shadow-lg hover:bg-black active:scale-95 transition-all flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Create Receipt</button>
+                </div>
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 overflow-x-auto shadow-sm">
+                    <table class="w-full text-left text-sm min-w-[900px]">
+                        <thead class="bg-slate-50/50 border-b border-slate-100"><tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest"><th class="px-8 py-6">Receipt ID</th><th class="px-8 py-6">Member Name</th><th class="px-8 py-6">Amount</th><th class="px-8 py-6">Status</th><th class="px-8 py-6 text-right">Documents</th></tr></thead>
+                        <tbody id="billing-list" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-seats" class="view-section max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-slate-800">Floor Occupancy</h2>
+                        <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Live Seat Tracking</p>
+                    </div>
+                    <div class="flex bg-white p-1.5 rounded-2xl border border-slate-200 overflow-x-auto max-w-full shadow-sm" id="shift-tabs"></div>
+                </div>
+                <div class="flex gap-4 mb-6 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white p-4 rounded-2xl border border-slate-100 w-fit">
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-indigo-500"></div> Occupied</div>
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-emerald-500"></div> Full Day</div>
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-amber-500"></div> Expiring</div>
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded border-2 border-dashed border-slate-300"></div> Empty</div>
+                </div>
+                <div class="bg-white p-6 md:p-10 rounded-[3rem] border border-slate-100 shadow-sm"><div id="seat-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 md:gap-4"></div></div>
+            </section>
+
+            <section id="view-revenue-analytics" class="view-section max-w-7xl mx-auto">
+                <div class="flex items-center gap-4 mb-8">
+                    <button onclick="navTo('dashboard')" class="p-3 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-slate-800">Financial Reports</h2>
+                    </div>
+                </div>
+                <div id="month-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10"></div>
+                <div id="month-detail-view" class="hidden">
+                    <div class="bg-slate-900 p-8 rounded-[2.5rem] text-white flex flex-col md:flex-row justify-between items-center mb-6 shadow-xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2"></div>
+                        <div class="relative z-10">
+                            <h3 id="selected-month-name" class="text-3xl font-black tracking-tight"></h3>
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Detailed Transactions</p>
+                        </div>
+                        <div class="text-right mt-4 md:mt-0 relative z-10">
+                            <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Collection</p>
+                            <h4 id="selected-month-total" class="text-5xl font-black text-emerald-400">₹0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50/50 border-b border-slate-100"><tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest"><th class="px-8 py-6">Member Reference</th><th class="px-8 py-6">Amount Collected</th><th class="px-8 py-6 text-right">View Receipt</th></tr></thead>
+                            <tbody id="month-transaction-list" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-settings" class="view-section max-w-4xl mx-auto">
+                <h2 class="text-3xl font-black tracking-tight text-slate-800 mb-8">System Configuration</h2>
+                <div class="space-y-6">
+                    
+                    <div class="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                        <h4 class="text-xs font-black uppercase tracking-widest mb-8 text-indigo-500 flex items-center gap-2"><i data-lucide="building-2" class="w-5 h-5"></i> Identity & Branding</h4>
+                        <div class="flex items-center gap-6 mb-8 border-b border-slate-100 pb-8">
+                            <div class="relative w-24 h-24 rounded-[1.5rem] border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden transition-all hover:border-indigo-400" id="set-logo-preview">
+                                <i data-lucide="image" class="text-slate-300 w-8 h-8"></i>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Library Brand Logo</label>
+                                <label class="cursor-pointer bg-indigo-50 text-indigo-600 px-5 py-3 rounded-2xl text-xs font-black hover:bg-indigo-100 transition inline-flex items-center gap-2">
+                                    <i data-lucide="upload" class="w-4 h-4"></i> Upload Logo
+                                    <input type="file" id="set-logo-input" hidden accept="image/*" onchange="previewLibraryLogo()">
+                                </label>
+                                <button onclick="removeLibraryLogo()" class="ml-2 px-5 py-3 text-rose-500 bg-rose-50 rounded-2xl text-xs font-black hover:bg-rose-100 transition">Remove</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Library Brand Name</label><input type="text" id="set-lib-name" class="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-indigo-500 focus:bg-white transition-all"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Owner Name</label><input type="text" id="set-owner-name" class="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-indigo-500 focus:bg-white transition-all"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Support Email</label><input type="email" id="set-lib-email" class="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-indigo-500 focus:bg-white transition-all"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Contact Phone</label><input type="text" id="set-lib-phone" class="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-indigo-500 focus:bg-white transition-all"></div>
+                            <div class="md:col-span-2"><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Full Address</label><textarea id="set-lib-address" class="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-indigo-500 focus:bg-white transition-all h-24 resize-none" placeholder="Street, City, State, ZIP"></textarea></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                        <h4 class="text-xs font-black uppercase tracking-widest mb-8 text-emerald-600 flex items-center gap-2"><i data-lucide="shield-check" class="w-5 h-5"></i> Legal & Billing</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">GST Number (Optional)</label><input type="text" id="set-lib-gst" class="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 focus:bg-white transition-all" placeholder="22AAAAA0000A1Z5"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Owner Aadhar Number</label><input type="text" id="set-owner-aadhar" class="w-full mt-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-emerald-500 focus:bg-white transition-all" placeholder="0000 0000 0000"></div>
+                            <div class="md:col-span-2"><label class="text-[10px] font-black uppercase text-indigo-500 ml-1">Merchant UPI ID (For Auto QR on Receipts)</label><input type="text" id="set-upi" class="w-full mt-1 p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl font-bold text-sm text-indigo-700 outline-none focus:border-indigo-500 focus:bg-white transition-all" placeholder="yourname@bank"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                        <h4 class="text-xs font-black uppercase tracking-widest mb-6 text-indigo-500 flex items-center gap-2"><i data-lucide="clock" class="w-5 h-5"></i> Shift & Capacity Management</h4>
+                        <div class="flex text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 px-3">
+                            <div class="flex-1">Shift Name</div>
+                            <div class="w-24 text-center">Total Seats</div>
+                            <div class="w-14"></div>
+                        </div>
+                        <div id="shift-config-list" class="space-y-3 mb-6"></div>
+                        <button onclick="addNewShift()" class="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-bold text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Add Custom Shift</button>
+                    </div>
+
+                    <div class="hidden">
+                        <input type="text" id="set-sub-plan" value="Basic">
+                        <input type="date" id="set-sub-start">
+                        <input type="date" id="set-sub-end">
+                    </div>
+
+                    <button onclick="saveLibrarySettings()" class="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-lg active:scale-95 transition-all shadow-xl shadow-slate-200 hover:bg-black flex items-center justify-center gap-2"><i data-lucide="save" class="w-5 h-5"></i> Save & Sync Configuration</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="manual-invoice-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white rounded-[3rem] max-w-md w-full p-10 shadow-2xl transform transition-transform duration-300 scale-95 origin-center" id="mi-modal-box">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-2xl font-black tracking-tight text-slate-800">Plan Action</h3>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Renew & Receipt</p>
+                </div>
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center"><i data-lucide="refresh-cw" class="w-6 h-6"></i></div>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Select Member</label>
+                    <select id="mi-member" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-emerald-500 transition-all"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Start/From</label>
+                        <input type="date" id="mi-from" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Valid Until/To</label>
+                        <input type="date" id="mi-to" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-emerald-500 text-emerald-600">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase text-emerald-600 ml-1">Fee Collected (₹)</label>
+                    <input type="number" id="mi-amount" class="w-full bg-emerald-50 p-4 rounded-2xl font-black text-xl text-emerald-700 outline-none border border-emerald-100 focus:border-emerald-500 focus:bg-white transition-all placeholder:text-emerald-300" placeholder="0.00">
+                </div>
+            </div>
+            <div class="flex gap-4 mt-8">
+                <button onclick="closeManualInvoiceModal()" class="flex-1 py-4 text-slate-500 font-bold rounded-2xl bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
+                <button onclick="generateManualInvoice()" class="flex-[1.5] py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg shadow-emerald-200 active:scale-95 hover:bg-emerald-600 transition-all">Confirm Renew</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="member-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-[3rem] max-w-2xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden transform transition-transform scale-95" id="m-modal-box">
+            <div class="p-8 pb-6 flex justify-between items-center border-b border-slate-100">
+                <div>
+                    <h3 class="text-2xl font-black tracking-tight text-slate-800" id="member-modal-title">New Enrollment</h3>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Add to database</p>
+                </div>
+                <button onclick="closeMemberModal()" class="p-3 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50/50">
+                <div class="flex flex-col items-center mb-8">
+                    <div class="relative group cursor-pointer">
+                        <div id="m-photo-preview" class="w-32 h-32 rounded-[2.5rem] bg-white border-4 border-white shadow-xl flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105"><i data-lucide="user" class="w-10 h-10 text-slate-300"></i></div>
+                        <div class="absolute -bottom-2 -right-2 flex gap-2">
+                            <button onclick="startCamera()" class="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg hover:bg-indigo-700 transition"><i data-lucide="camera" class="w-4 h-4"></i></button>
+                            <label class="p-3 bg-emerald-500 text-white rounded-2xl shadow-lg cursor-pointer hover:bg-emerald-600 transition"><i data-lucide="upload" class="w-4 h-4"></i><input type="file" id="m-photo-input" hidden accept="image/*" onchange="previewFile()"></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <input type="hidden" id="edit-member-id">
+                    <div class="md:col-span-2"><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Full Name</label><input type="text" id="m-name" class="w-full bg-white border border-slate-200 rounded-2xl p-4 font-bold text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition"></div>
+                    <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Mobile No.</label><input type="text" id="m-phone" class="w-full bg-white border border-slate-200 rounded-2xl p-4 font-bold text-sm outline-none focus:border-indigo-500 transition"></div>
+                    <div><label class="text-[10px] font-black uppercase text-indigo-500 ml-1">Gender</label><select id="m-gender" class="w-full bg-indigo-50/50 border border-indigo-100 text-indigo-700 rounded-2xl p-4 font-bold text-sm outline-none focus:border-indigo-500 transition"><option value="Male">Male</option><option value="Female">Female</option></select></div>
+                    <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Assigned Shift</label><select id="m-shift" class="w-full bg-white border border-slate-200 rounded-2xl p-4 font-bold text-sm outline-none focus:border-indigo-500 transition" onchange="populateSeatSelect()"></select></div>
+                    <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Seat Matrix No.</label><select id="m-seat" class="w-full bg-white border border-slate-200 rounded-2xl p-4 font-bold text-sm outline-none focus:border-indigo-500 transition"></select></div>
+                    <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Joining Date</label><input type="date" id="m-start" class="w-full bg-white border border-slate-200 rounded-2xl p-4 font-bold text-sm outline-none focus:border-indigo-500 transition" onchange="autoEndDate()"></div>
+                    <div><label class="text-[10px] font-black uppercase text-rose-500 ml-1">Valid Until</label><input type="date" id="m-end" class="w-full bg-white border border-rose-200 rounded-2xl p-4 font-bold text-sm text-rose-600 outline-none focus:border-rose-500 transition"></div>
+                    <div class="md:col-span-2"><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Residential Address</label><textarea id="m-address" class="w-full bg-white border border-slate-200 rounded-2xl p-4 font-bold text-sm outline-none focus:border-indigo-500 transition h-20 resize-none" placeholder="Enter full details..."></textarea></div>
+                    <div class="md:col-span-2"><label class="text-[10px] font-black uppercase text-emerald-600 ml-1">Admission/Renewal Fee (₹)</label><input type="number" id="m-fee" class="w-full bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 font-black text-emerald-700 outline-none focus:border-emerald-500 focus:bg-white transition" placeholder="0.00"></div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-slate-100 flex gap-4 bg-white">
+                <button onclick="closeMemberModal()" class="flex-1 py-4 text-slate-500 font-bold rounded-2xl hover:bg-slate-50 transition">Discard</button>
+                <button onclick="saveMember()" class="flex-[2] py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Commit Member</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-[3.5rem] max-w-sm w-full p-10 shadow-2xl text-center relative overflow-hidden transform transition-transform scale-95" id="p-modal-box">
+            <div class="absolute top-0 left-0 w-full h-28 bg-gradient-to-b from-indigo-500 to-indigo-700"></div>
+            <div id="p-view-photo" class="w-28 h-28 rounded-[2rem] border-4 border-white shadow-xl mx-auto mt-4 bg-slate-50 overflow-hidden flex items-center justify-center relative z-10"></div>
+            <h3 id="p-view-name" class="text-2xl font-black mt-4 text-slate-800 tracking-tight">---</h3>
+            <div id="p-view-gender" class="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500 mb-5 bg-indigo-50 py-1.5 px-4 rounded-full w-fit mx-auto mt-2">---</div>
+            
+            <div class="bg-slate-50 rounded-2xl p-5 text-left text-xs mb-6 border border-slate-100 space-y-3">
+                <div class="flex justify-between items-center"><span class="text-slate-400 font-black uppercase tracking-widest text-[9px]">Mobile</span><span id="p-view-phone" class="font-bold text-slate-700"></span></div>
+                <div class="flex justify-between items-center"><span class="text-slate-400 font-black uppercase tracking-widest text-[9px]">Allocation</span><span id="p-view-seat" class="font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded"></span></div>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-200"><span class="text-rose-500 font-black uppercase tracking-widest text-[9px]">Dues</span><span id="p-view-due" class="font-black text-rose-500">₹0</span></div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <div class="flex gap-2">
+                    <a id="p-view-call" href="#" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold flex items-center justify-center gap-1 transition-all text-sm"><i data-lucide="phone" class="w-4 h-4"></i> Call</a>
+                    <button id="p-view-renew" class="flex-[1.5] bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-200 text-white py-3 rounded-2xl font-black flex items-center justify-center gap-1 transition-all text-sm"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Renew</button>
+                </div>
+                <button onclick="closeProfileModal()" class="w-full text-slate-400 py-3 rounded-2xl font-bold hover:text-slate-600 transition">Close Profile</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="id-card-modal" class="fixed inset-0 bg-slate-900/60 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm"><div class="flex flex-col items-center gap-8"><div id="id-card-preview" class="w-[340px] h-[540px] bg-white rounded-[2rem] overflow-hidden relative shadow-2xl border border-slate-100"><div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none"><i data-lucide="library" class="w-64 h-64"></i></div><div class="h-36 bg-gradient-to-r from-indigo-600 to-indigo-800 relative"><div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full"></div><div class="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-tr-full"></div><div class="relative z-10 flex items-center p-6 gap-4"><div id="id-card-top-logo" class="w-12 h-12 bg-white rounded-xl shadow-lg hidden items-center justify-center overflow-hidden"></div><div><h2 id="id-card-lib-name" class="font-black italic text-xl text-white uppercase tracking-wider">LibPro</h2><p class="text-[9px] font-bold tracking-[0.3em] text-indigo-200">ACCESS PASS</p></div></div></div><div class="px-8 relative flex justify-between items-start -mt-12 z-20"><div id="id-card-photo" class="w-28 h-28 rounded-[1.5rem] bg-slate-100 border-[6px] border-white shadow-xl overflow-hidden flex-shrink-0 flex items-center justify-center object-cover"></div><div id="id-card-qr" class="w-16 h-16 p-1.5 bg-white rounded-xl shadow-md border border-slate-100 mt-14 flex items-center justify-center"></div></div><div class="px-8 mt-6 relative z-20"><h3 id="id-card-name" class="text-2xl font-black text-slate-800 tracking-tight leading-none uppercase">---</h3><div class="flex items-center gap-2 mt-2"><span id="id-card-id" class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-indigo-100">ID: ---</span></div><div class="mt-8 space-y-5"><div class="flex items-center gap-4"><div class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100"><i data-lucide="phone" class="w-4 h-4"></i></div><div><p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Contact</p><p class="text-xs font-bold text-slate-800" id="id-card-phone">---</p></div></div><div class="flex items-center gap-4"><div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 border border-indigo-100"><i data-lucide="armchair" class="w-4 h-4"></i></div><div><p class="text-[9px] font-black uppercase tracking-widest text-indigo-400">Allocation</p><p class="text-xs font-bold text-indigo-700" id="id-card-seat">---</p></div></div><div class="flex items-center gap-4"><div class="w-9 h-9 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 border border-rose-100"><i data-lucide="calendar-off" class="w-4 h-4"></i></div><div><p class="text-[9px] font-black uppercase tracking-widest text-rose-400">Valid Till</p><p class="text-xs font-bold text-rose-600" id="id-card-expiry">---</p></div></div></div></div><div class="absolute bottom-0 w-full h-10 bg-slate-900 flex items-center justify-center"><p class="text-[8px] text-slate-400 font-black uppercase tracking-[0.4em]">Official Library ID</p></div></div><div class="flex gap-4"><button onclick="downloadIDCard()" class="bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black shadow-xl flex items-center gap-2 hover:scale-105 transition"><i data-lucide="download"></i> Save Image</button><button onclick="document.getElementById('id-card-modal').classList.add('hidden')" class="bg-rose-500 text-white px-8 py-4 rounded-2xl font-black shadow-xl transition hover:scale-105">Close</button></div></div></div>
+    <div id="invoice-modal" class="fixed inset-0 bg-slate-900/60 hidden z-[550] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto"><div class="bg-white rounded-[2rem] max-w-md w-full p-6 shadow-2xl my-8"><div id="invoice-area" class="bg-white p-8 rounded-3xl relative overflow-hidden border border-slate-100 shadow-sm"><div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-emerald-500"></div><div class="flex justify-between items-start mb-6 pt-2"><div class="flex items-start gap-3"><div id="inv-logo-container" class="w-14 h-14 bg-slate-50 rounded-xl hidden items-center justify-center overflow-hidden border border-slate-100 flex-shrink-0"></div><div><h2 id="inv-lib-name-view" class="font-black text-xl text-slate-800 tracking-tight uppercase">LIBPRO</h2><p id="inv-lib-address" class="text-[9px] font-bold text-slate-500 max-w-[140px] leading-tight mt-1">---</p><p id="inv-lib-contact" class="text-[9px] font-bold text-slate-500 mt-1">---</p><p id="inv-lib-gst" class="text-[9px] font-black text-indigo-500 mt-1 hidden">GST: ---</p></div></div><div class="text-right flex-shrink-0"><span class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">PAID</span><p class="text-[8px] font-bold text-slate-400 mt-3 tracking-widest">RECEIPT NO.</p><p id="inv-no" class="text-[9px] font-black text-slate-800">---</p><p class="text-[8px] font-bold text-slate-400 mt-1 tracking-widest">DATE</p><p id="inv-date" class="text-[9px] font-black text-slate-800">--/--/----</p></div></div><div class="bg-slate-50 p-5 rounded-2xl mb-6 border border-slate-100"><p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Billed To</p><h3 id="inv-member" class="font-black text-lg text-slate-800 uppercase">---</h3><p id="inv-seat-view" class="text-xs font-bold text-slate-500 mt-1">Seat: ---</p></div><div class="mb-6"><div class="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100 pb-2 mb-4"><span>Description</span><span>Amount</span></div><div class="flex justify-between items-center py-2"><div><p class="font-bold text-sm text-slate-800">Seat Subscription</p><p id="inv-period" class="text-[10px] font-bold text-indigo-600 mt-0.5">--- to ---</p></div><span id="inv-amount" class="font-black text-lg text-slate-800">₹0</span></div></div><div class="flex items-center justify-between bg-slate-900 text-white p-5 rounded-2xl mt-4 shadow-lg"><div class="flex-1"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Paid</p><p id="inv-total" class="font-black text-3xl mt-1 text-emerald-400">₹0</p></div><div id="qr-block" class="hidden bg-white p-1.5 rounded-xl"><div id="qrcode"></div></div></div></div><div class="mt-6 flex gap-3"><button onclick="shareWhatsApp()" class="flex-1 bg-emerald-500 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-emerald-600 transition shadow-lg shadow-emerald-200"><i data-lucide="share-2"></i> Send</button><button onclick="downloadInvoice()" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"><i data-lucide="download"></i> Save</button></div><button onclick="closeInvoiceModal()" class="w-full mt-4 text-slate-400 text-xs font-bold uppercase text-center hover:text-slate-600 transition">Dismiss</button></div></div>
+    <div id="history-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-[3rem] max-w-2xl w-full h-[80vh] flex flex-col shadow-2xl overflow-hidden"><div class="p-8 border-b border-slate-100 flex justify-between items-center bg-white"><div><h3 class="text-2xl font-black tracking-tight text-slate-800" id="history-member-name">Records</h3><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Payment History</p></div><button onclick="closeHistoryModal()" class="p-3 bg-slate-50 text-slate-500 rounded-2xl hover:bg-rose-50 hover:text-rose-500 transition"><i data-lucide="x"></i></button></div><div id="history-list" class="flex-1 overflow-y-auto p-8 space-y-4 bg-slate-50 custom-scrollbar"></div></div></div>
+    <div id="camera-wrapper"><video id="camera-video" autoplay playsinline></video><div class="flex gap-6 mt-10"><button onclick="stopCamera()" class="p-5 bg-rose-600 text-white rounded-full shadow-2xl"><i data-lucide="x"></i></button><button onclick="takeSnapshot()" class="p-8 bg-white text-indigo-600 rounded-full scale-110 shadow-2xl"><i data-lucide="camera" class="w-8 h-8"></i></button></div></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBgEtDtRatygBXjuuCYwXE7034IA5Uv1xM",
+            authDomain: "libpro-saas.firebaseapp.com",
+            databaseURL: "https://libpro-saas-default-rtdb.firebaseio.com",
+            projectId: "libpro-saas",
+            storageBucket: "libpro-saas.firebasestorage.app",
+            messagingSenderId: "32871064620",
+            appId: "1:32871064620:web:ff5c4887fee33e6dc95d89"
+        };
+        if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database(), auth = firebase.auth();
+        
+        let cloudData = null, userUid = null, currentShiftId = 's1', currentPhotoData = null, currentActiveInv = null, myChart = null;
+        let localShifts = [ {id:'s1', name:'Morning Shift', capacity: 40}, {id:'s2', name:'Evening Shift', capacity: 40}, {id:'s_full', name:'Full Day', capacity: 40, isFullDay: true} ];
+        let currentLibLogo = null;
+
+        // Custom Toast System Upgrade
+        function showToast(msg, type='success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = type === 'success' ? 'bg-emerald-500' : (type === 'error' ? 'bg-rose-500' : 'bg-indigo-600');
+            const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-octagon' : 'info');
+            
+            toast.className = `${colors} text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-sm flex items-center gap-3 toast-enter pointer-events-auto max-w-sm`;
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5 flex-shrink-0"></i> <span>${msg}</span>`;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-leave');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function toggleLoader(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
+        
+        function switchAuth(t) { 
+            document.getElementById('login-card').classList.toggle('hidden', t!=='login'); 
+            document.getElementById('signup-card').classList.toggle('hidden', t!=='signup'); 
+            document.getElementById('reset-card').classList.toggle('hidden', t!=='reset');
+            document.getElementById('auth-layer').classList.remove('hidden'); 
+        }
+        
+        function handleLogin() {
+            const e = document.getElementById('login-email').value, p = document.getElementById('login-pass').value;
+            if(!e || !p) return showToast("Please fill all credentials!", "error"); 
+            toggleLoader(true);
+            auth.signInWithEmailAndPassword(e, p).then(u => { userUid = u.user.uid; loadUserCloudData(); showToast("Login Successful!"); }).catch(err => { showToast(err.message, "error"); toggleLoader(false); });
+        }
+
+        function handleSignup() {
+            const e = document.getElementById('reg-email').value, p = document.getElementById('reg-pass').value;
+            if(!e || !p) return showToast("Please complete the form!", "error"); 
+            toggleLoader(true);
+            auth.createUserWithEmailAndPassword(e, p).then(u => {
+                userUid = u.user.uid;
+                const data = { 
+                    owner: document.getElementById('reg-owner').value, email: e, 
+                    library: { 
+                        name: document.getElementById('reg-lib-name').value, ownerName: document.getElementById('reg-owner').value,
+                        email: e, phone: document.getElementById('reg-phone').value, address: '', upi: '', gst: '', aadhar: '', logo: '',
+                        subPlan: 'Basic', subStart: new Date().toISOString().split('T')[0], subEnd: '', shifts: localShifts 
+                    }, members: [], seatAssignments: [], invoices: [] 
+                };
+                db.ref('users/' + userUid).set(data).then(() => { showToast("System Initialized!"); location.reload(); });
+            }).catch(err => { showToast(err.message, "error"); toggleLoader(false); });
+        }
+
+        function handlePasswordReset() {
+            const e = document.getElementById('reset-email').value;
+            if(!e) return showToast("Please enter your registered email!", "error");
+            toggleLoader(true);
+            auth.sendPasswordResetEmail(e).then(() => { toggleLoader(false); showToast("Reset link sent to your email!"); switchAuth('login'); }).catch(err => { toggleLoader(false); showToast(err.message, "error"); });
+        }
+
+        function handleLogout() { auth.signOut().then(() => { showToast("Logged out securely.", "info"); setTimeout(()=>location.reload(), 800); }); }
+
+        function loadUserCloudData() {
+            if(!userUid) return;
+            db.ref('users/' + userUid).on('value', (snapshot) => {
+                cloudData = snapshot.val();
+                if(cloudData) {
+                    if(!cloudData.library.shifts) cloudData.library.shifts = localShifts;
+                    let hasFullDay = false;
+                    cloudData.library.shifts.forEach(s => { if(s.capacity === undefined) s.capacity = cloudData.library.capacity || 40; if(s.id === 's_full' || s.isFullDay) hasFullDay = true; });
+                    if(!hasFullDay) cloudData.library.shifts.push({id: 's_full', name: 'Full Day', capacity: cloudData.library.capacity || 40, isFullDay: true});
+                    localShifts = cloudData.library.shifts;
+                    
+                    document.getElementById('auth-layer').classList.add('hidden');
+                    document.getElementById('app-shell').classList.remove('hidden');
+                    refreshUI(); updateDynamicChart();
+                } else {
+                    showToast("Library data missing. Please create account.", "error"); auth.signOut(); switchAuth('signup');
+                }
+                toggleLoader(false);
+            }, (error) => { showToast("Database Error: " + error.message, "error"); toggleLoader(false); });
+        }
+
+        function saveToCloud() { if(userUid && cloudData) db.ref('users/' + userUid).update(cloudData); }
+
+        function refreshUI() {
+            if(!cloudData) return;
+            const mList = cloudData.members || [], iList = cloudData.invoices || [], aList = cloudData.seatAssignments || [], lib = cloudData.library;
+
+            document.getElementById('header-lib-name').innerText = lib.name || "LibPro";
+            document.getElementById('stat-members').innerText = mList.length;
+            const revenue = iList.filter(i=>i.status==='Paid').reduce((a,b)=>a+(Number(b.amount)||0), 0);
+            const dues = iList.filter(i=>i.status==='Unpaid').reduce((a,b)=>a+(Number(b.amount)||0), 0);
+            document.getElementById('stat-revenue').innerText = '₹' + revenue;
+            document.getElementById('stat-dues').innerText = '₹' + dues;
+            
+            const curShiftObj = localShifts.find(s => s.id === currentShiftId), totalCapacityCurrent = curShiftObj ? curShiftObj.capacity : 40;
+            document.getElementById('stat-seats').innerText = `${aList.filter(a=>a.shiftId === currentShiftId).length}/${totalCapacityCurrent}`;
+            
+            document.getElementById('set-lib-name').value = lib.name || ''; document.getElementById('set-owner-name').value = lib.ownerName || '';
+            document.getElementById('set-lib-email').value = lib.email || ''; document.getElementById('set-lib-phone').value = lib.phone || '';
+            document.getElementById('set-lib-address').value = lib.address || ''; document.getElementById('set-lib-gst').value = lib.gst || '';
+            document.getElementById('set-owner-aadhar').value = lib.aadhar || ''; document.getElementById('set-upi').value = lib.upi || '';
+            
+            currentLibLogo = lib.logo || null;
+            if(currentLibLogo) document.getElementById('set-logo-preview').innerHTML = `<img src="${currentLibLogo}" class="w-full h-full object-cover">`;
+            else document.getElementById('set-logo-preview').innerHTML = `<i data-lucide="image" class="text-slate-300 w-8 h-8"></i>`;
+            updateHeaderLogo();
+
+            renderShiftTabs(); renderSeats(); renderMembers(); renderBilling(); updateExpiringSoon(); renderRevenueMonths(); renderShiftConfig();
+            lucide.createIcons();
+        }
+
+        function previewLibraryLogo() { const f = document.getElementById('set-logo-input').files[0], r = new FileReader(); r.onloadend = () => { currentLibLogo = r.result; document.getElementById('set-logo-preview').innerHTML = `<img src="${currentLibLogo}" class="w-full h-full object-cover">`; updateHeaderLogo(); showToast("Logo uploaded. Remember to save."); }; if(f) r.readAsDataURL(f); }
+        function removeLibraryLogo() { currentLibLogo = null; document.getElementById('set-logo-preview').innerHTML = `<i data-lucide="image" class="text-slate-300 w-8 h-8"></i>`; lucide.createIcons(); updateHeaderLogo(); showToast("Logo removed."); }
+        function updateHeaderLogo() { const box = document.getElementById('main-header-logo'); if(currentLibLogo) box.innerHTML = `<img src="${currentLibLogo}" class="w-full h-full object-cover">`; else { box.innerHTML = `<i data-lucide="zap" class="w-5 h-5"></i>`; lucide.createIcons(); } }
+
+        function toggleModalAnim(id, show) {
+            const modal = document.getElementById(id);
+            const box = modal.querySelector('div[id$="-box"]') || modal.children[0];
+            if(show) {
+                modal.classList.remove('hidden');
+                setTimeout(() => box.classList.replace('scale-95', 'scale-100'), 10);
+            } else {
+                box.classList.replace('scale-100', 'scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        function openManualInvoiceModal() {
+            const mList = cloudData.members || [];
+            if(mList.length === 0) return showToast("Register members first to issue receipts!", "error");
+            document.getElementById('mi-member').innerHTML = mList.map(m => `<option value="${m.id}">${m.name} (Seat #${m.seatNo})</option>`).join('');
+            document.getElementById('mi-from').value = new Date().toISOString().split('T')[0];
+            let nextMonth = new Date(); nextMonth.setMonth(nextMonth.getMonth() + 1);
+            document.getElementById('mi-to').value = nextMonth.toISOString().split('T')[0];
+            document.getElementById('mi-amount').value = "";
+            toggleModalAnim('manual-invoice-modal', true); lucide.createIcons();
+        }
+
+        function openRenewModal(mId) {
+            if(typeof closeProfileModal === 'function') closeProfileModal();
+            const mList = cloudData.members || [], m = mList.find(x => x.id === mId);
+            if(!m) return;
+            document.getElementById('mi-member').innerHTML = mList.map(mem => `<option value="${mem.id}" ${mem.id === mId ? 'selected' : ''}>${mem.name} (Seat #${mem.seatNo})</option>`).join('');
+            let nextStart = new Date(m.end); nextStart.setDate(nextStart.getDate() + 1);
+            let nextEnd = new Date(nextStart); nextEnd.setMonth(nextEnd.getMonth() + 1);
+            document.getElementById('mi-from').value = nextStart.toISOString().split('T')[0];
+            document.getElementById('mi-to').value = nextEnd.toISOString().split('T')[0];
+            document.getElementById('mi-amount').value = m.fee || "";
+            toggleModalAnim('manual-invoice-modal', true); lucide.createIcons();
+        }
+
+        function generateManualInvoice() {
+            const mId = parseInt(document.getElementById('mi-member').value), amt = Number(document.getElementById('mi-amount').value);
+            const from = document.getElementById('mi-from').value, to = document.getElementById('mi-to').value;
+            if(!amt || !from || !to) return showToast("Please enter valid amount and dates.", "error");
+            if(!cloudData.invoices) cloudData.invoices = [];
+            cloudData.invoices.push({ id: 'REC-' + Date.now(), memberId: mId, amount: amt, status: 'Paid', date: new Date().toISOString().split('T')[0], periodFrom: from, periodTo: to });
+            const mIndex = (cloudData.members || []).findIndex(x => x.id === mId);
+            if(mIndex !== -1) { cloudData.members[mIndex].start = from; cloudData.members[mIndex].end = to; }
+            saveToCloud(); closeManualInvoiceModal(); refreshUI(); showToast("Plan Renewed & Receipt Generated!");
+        }
+
+        function closeManualInvoiceModal() { toggleModalAnim('manual-invoice-modal', false); }
+
+        function renderMembers() {
+            const mList = cloudData.members || [], query = document.getElementById('member-search').value.toLowerCase();
+            const filtered = mList.filter(m => m.name.toLowerCase().includes(query) || m.phone.includes(query));
+            const today = new Date().toISOString().split('T')[0];
+
+            document.getElementById('member-list').innerHTML = filtered.map(m => {
+                const s = (cloudData.library.shifts || localShifts).find(sh => sh.id === m.shiftId);
+                
+                // Status Badge Logic Upgrade
+                let statusBadge = '';
+                const diffDays = (new Date(m.end) - new Date()) / (1000*3600*24);
+                if (m.end < today) statusBadge = '<span class="bg-rose-100 text-rose-600 px-2 py-0.5 rounded text-[9px] uppercase font-black ml-2 tracking-wider">Expired</span>';
+                else if (diffDays <= 3) statusBadge = '<span class="bg-amber-100 text-amber-600 px-2 py-0.5 rounded text-[9px] uppercase font-black ml-2 tracking-wider">Expiring</span>';
+                else statusBadge = '<span class="bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded text-[9px] uppercase font-black ml-2 tracking-wider">Active</span>';
+
+                return `<tr class="hover:bg-slate-50 transition border-b border-slate-100 group">
+                    <td class="px-8 py-6 flex items-center gap-4 cursor-pointer" onclick="openProfileModal(${m.id})">
+                        <div class="w-12 h-12 rounded-2xl bg-white overflow-hidden border-2 border-slate-100 shadow-sm group-hover:border-indigo-200 transition-colors">${m.photo ? `<img src="${m.photo}" class="w-full h-full object-cover">` : `<i data-lucide="user" class="text-slate-300 p-2.5"></i>`}</div>
+                        <div><div class="font-black text-slate-800 text-base">${m.name}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">${m.phone}</div></div>
+                    </td>
+                    <td class="px-8 py-6"><div class="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 inline-block px-2 py-1 rounded mb-1">${s?.name||'-'}</div><div class="font-bold text-slate-700 text-sm">Seat #${m.seatNo}</div></td>
+                    <td class="px-8 py-6"><div class="font-bold text-xs text-slate-500 flex items-center mb-1">${m.start} → ${m.end}</div> ${statusBadge}</td>
+                    <td class="px-8 py-6 text-right flex justify-end gap-2">
+                        <button onclick="openRenewModal(${m.id})" title="Renew Plan" class="p-2.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-xl transition-all shadow-sm"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                        <button onclick="openIDCard(${m.id})" title="ID Card" class="p-2.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-xl transition-all shadow-sm"><i data-lucide="id-card" class="w-4 h-4"></i></button>
+                        <button onclick="openHistoryModal(${m.id})" title="History" class="p-2.5 bg-white border border-slate-200 hover:border-slate-400 text-slate-600 rounded-xl transition-all shadow-sm"><i data-lucide="clock" class="w-4 h-4"></i></button>
+                        <button onclick="openMemberModal(${m.id})" title="Edit" class="p-2.5 bg-white border border-slate-200 hover:border-indigo-400 text-slate-600 hover:text-indigo-600 rounded-xl transition-all shadow-sm"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="4" class="text-center py-12 font-black text-slate-300 uppercase tracking-widest text-sm"><i data-lucide="search-x" class="w-10 h-10 mx-auto mb-3 opacity-50"></i>No Matches Found</td></tr>';
+            lucide.createIcons();
+        }
+
+        // Keep standard display for others to avoid excessive code length, just applied CSS upgrade
+        function openHistoryModal(mId) { /* Logic Unchanged */ const m = cloudData.members.find(x => x.id === mId); if(!m) return; document.getElementById('history-member-name').innerText = m.name + " Records"; const mInvoices = (cloudData.invoices || []).filter(inv => inv.memberId === mId); const listContainer = document.getElementById('history-list'); if(mInvoices.length === 0) { listContainer.innerHTML = `<div class="text-center py-10"><i data-lucide="folder-open" class="mx-auto text-slate-200 w-16 h-16 mb-4"></i><p class="font-black text-slate-300 italic">NO PAYMENT HISTORY</p></div>`; } else { listContainer.innerHTML = mInvoices.sort((a,b) => new Date(b.date) - new Date(a.date)).map(inv => `<div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition"><div class="flex items-center gap-4"><div class="p-4 rounded-2xl bg-indigo-50 text-indigo-600"><i data-lucide="receipt"></i></div><div><p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">${inv.date}</p><h4 class="font-black text-slate-800 text-lg">₹${inv.amount} Collected</h4><p class="text-[9px] font-bold text-indigo-500 tracking-wider">${inv.periodFrom} to ${inv.periodTo}</p></div></div><div class="flex items-center gap-3"><span class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider ${inv.status==='Paid'?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}">${inv.status}</span><button onclick="viewInvoice('${inv.id}')" class="p-3 bg-slate-900 hover:bg-black text-white rounded-xl shadow-lg transition"><i data-lucide="printer" class="w-4 h-4"></i></button></div></div>`).join(''); } document.getElementById('history-modal').classList.remove('hidden'); lucide.createIcons(); }
+
+        function updateDynamicChart() {
+            const iList = cloudData.invoices || [], paidInvs = iList.filter(i => i.status === 'Paid'), last7Days = {};
+            for(let i=6; i>=0; i--) { const d = new Date(); d.setDate(d.getDate() - i); last7Days[d.toISOString().split('T')[0]] = 0; }
+            paidInvs.forEach(inv => { if(last7Days[inv.date] !== undefined) last7Days[inv.date] += Number(inv.amount); });
+            const labels = Object.keys(last7Days).map(k => k.split('-').slice(1).join('/')), data = Object.values(last7Days);
+            if(myChart) myChart.destroy();
+            const ctx = document.getElementById('revChart').getContext('2d');
+            
+            // Premium Chart Upgrade
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(79, 70, 229, 0.4)'); gradient.addColorStop(1, 'rgba(79, 70, 229, 0.0)');
+
+            myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Revenue', data: data, borderColor: '#4f46e5', backgroundColor: gradient, fill: true, tension: 0.4, borderWidth: 4, pointRadius: 5, pointBackgroundColor: '#fff', pointBorderColor: '#4f46e5', pointBorderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, border: {display: false}, grid: { color: '#f1f5f9', drawTicks: false } }, x: { border: {display: false}, grid: { display: false } } }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e293b', padding: 12, titleFont: {size: 14, family: 'Plus Jakarta Sans'}, bodyFont: {size: 14, family: 'Plus Jakarta Sans'}, cornerRadius: 12 } } } });
+        }
+
+        function renderSeats() {
+            const grid = document.getElementById('seat-grid'), sList = cloudData.library.shifts || localShifts, currentShiftObj = sList.find(s => s.id === currentShiftId), cap = currentShiftObj ? (currentShiftObj.capacity || 40) : 40, today = new Date();
+            grid.innerHTML = "";
+            for(let i=1; i<=cap; i++) {
+                const allAssignsForSeat = (cloudData.seatAssignments || []).filter(a => a.seatId === i);
+                let assign = null, isFullDayAssign = false;
+                if (currentShiftObj && currentShiftObj.isFullDay) { assign = allAssignsForSeat.find(a => { const sh = sList.find(s => s.id === a.shiftId); return sh && sh.isFullDay; }); if(assign) isFullDayAssign = true; else if (allAssignsForSeat.length > 0) assign = allAssignsForSeat[0]; } else { assign = allAssignsForSeat.find(a => a.shiftId === currentShiftId); if (!assign) { assign = allAssignsForSeat.find(a => { const sh = sList.find(s => s.id === a.shiftId); return sh && sh.isFullDay; }); if (assign) isFullDayAssign = true; } }
+                
+                let cls = 'available', tooltip = `Seat #${i} (Available)`;
+                if(assign) {
+                    const m = (cloudData.members || []).find(x => x.id === assign.memberId);
+                    const diff = (new Date(m?.end) - today) / (1000*3600*24);
+                    const isActuallyFullDay = sList.find(s => s.id === assign.shiftId)?.isFullDay;
+                    if (diff <= 3 && diff >= 0) cls = 'expiring'; else if (isActuallyFullDay) cls = 'full-day'; else cls = 'occupied';
+                    tooltip = `${m?.name || 'Unknown'} | Seat #${i}\nValid Till: ${m?.end || 'N/A'}`; // Added Tooltip Upgrade
+                }
+
+                const card = document.createElement('div');
+                card.className = `seat-card aspect-square flex flex-col items-center justify-center rounded-[1.2rem] font-black text-sm shadow-sm ${cls}`;
+                card.innerHTML = `<span>${i}</span>${assign ? '<i data-lucide="user" class="w-4 h-4 mt-1 opacity-80"></i>' : ''}`;
+                card.title = tooltip; // Added native hover title
+                card.onclick = () => { if(assign) openProfileModal(assign.memberId); else openMemberModal(); };
+                grid.appendChild(card);
+            }
+            lucide.createIcons();
+        }
+
+        function saveMember() {
+            const id = document.getElementById('edit-member-id').value, name = document.getElementById('m-name').value, fee = Number(document.getElementById('m-fee').value);
+            if(!name || isNaN(fee)) return showToast("Required fields missing: Name & Fee", "error");
+            const data = { id: id?parseInt(id):Date.now(), name, phone: document.getElementById('m-phone').value, gender: document.getElementById('m-gender').value, address: document.getElementById('m-address').value, fee, start: document.getElementById('m-start').value, end: document.getElementById('m-end').value, shiftId: document.getElementById('m-shift').value, seatNo: parseInt(document.getElementById('m-seat').value), photo: currentPhotoData };
+            if(!cloudData.members) cloudData.members = []; if(!cloudData.seatAssignments) cloudData.seatAssignments = []; if(!cloudData.invoices) cloudData.invoices = [];
+            if(id) { const idx = cloudData.members.findIndex(m => m.id == id); cloudData.members[idx] = data; cloudData.seatAssignments = cloudData.seatAssignments.filter(a => a.memberId != id); showToast("Member Details Updated!"); } 
+            else { cloudData.members.push(data); cloudData.invoices.push({ id: 'REC-'+data.id, memberId: data.id, amount: fee, status: 'Paid', date: data.start, periodFrom: data.start, periodTo: data.end }); showToast("New Member Enrolled Successfully!"); }
+            cloudData.seatAssignments.push({ seatId: data.seatNo, memberId: data.id, shiftId: data.shiftId });
+            saveToCloud(); closeMemberModal(); refreshUI();
+        }
+
+        function renderBilling() { const iList = cloudData.invoices || []; document.getElementById('billing-list').innerHTML = iList.map(inv => { const m = (cloudData.members||[]).find(x => x.id === inv.memberId); return `<tr class="border-b border-slate-100 hover:bg-slate-50 transition"><td class="px-8 py-6 font-mono text-[10px] text-slate-400 font-black tracking-widest">${inv.id}</td><td class="px-8 py-6 font-black text-slate-800">${m?.name || '---'}</td><td class="px-8 py-6 text-emerald-600 font-black text-base">₹${inv.amount}</td><td class="px-8 py-6"><button onclick="toggleInvStatus('${inv.id}')" class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider transition hover:scale-105 ${inv.status==='Paid'?'bg-emerald-50 text-emerald-600':'bg-rose-50 text-rose-600'}">${inv.status}</button></td><td class="px-8 py-6 text-right"><button onclick="viewInvoice('${inv.id}')" class="p-3 bg-white border border-slate-200 text-slate-600 hover:border-indigo-500 hover:text-indigo-600 rounded-xl shadow-sm transition"><i data-lucide="printer" class="w-4 h-4"></i></button></td></tr>`; }).join('') || '<tr><td colspan="5" class="text-center py-10 text-slate-300 uppercase font-black text-xs tracking-widest">No Billing Records</td></tr>'; lucide.createIcons(); }
+
+        function toggleInvStatus(id) { const i = cloudData.invoices.find(x => x.id === id); i.status = (i.status === 'Paid') ? 'Unpaid' : 'Paid'; saveToCloud(); refreshUI(); showToast("Status updated to " + i.status, "info"); }
+
+        function saveLibrarySettings() { const lib = cloudData.library; lib.logo = currentLibLogo; lib.name = document.getElementById('set-lib-name').value; lib.ownerName = document.getElementById('set-owner-name').value; lib.email = document.getElementById('set-lib-email').value; lib.phone = document.getElementById('set-lib-phone').value; lib.address = document.getElementById('set-lib-address').value; lib.gst = document.getElementById('set-lib-gst').value; lib.aadhar = document.getElementById('set-owner-aadhar').value; lib.upi = document.getElementById('set-upi').value; lib.subPlan = document.getElementById('set-sub-plan').value; lib.subStart = document.getElementById('set-sub-start').value; lib.subEnd = document.getElementById('set-sub-end').value; saveToCloud(); showToast("System Configuration Synced Successfully!"); }
+
+        function renderShiftTabs() { const s = cloudData.library.shifts || localShifts; document.getElementById('shift-tabs').innerHTML = s.map(x => `<button onclick="setShift('${x.id}')" class="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${currentShiftId === x.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}">${x.name}</button>`).join(''); }
+        function setShift(id) { currentShiftId = id; refreshUI(); }
+        function navTo(id) { document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.getElementById('floating-menu').classList.remove('active'); window.scrollTo(0,0); }
+        function toggleMenu() { document.getElementById('floating-menu').classList.toggle('active'); }
+        function toggleDarkMode() { showToast("Dark Mode UI is in beta.", "info"); document.documentElement.classList.toggle('dark'); }
+        
+        function openProfileModal(mId) { const m = cloudData.members.find(x => x.id === mId), s = (cloudData.library.shifts || localShifts).find(sh => sh.id === m.shiftId), unpaid = (cloudData.invoices || []).filter(i => i.memberId === mId && i.status === 'Unpaid').reduce((a,b) => a + (Number(b.amount)||0), 0); document.getElementById('p-view-name').innerText = m.name; document.getElementById('p-view-phone').innerText = m.phone; document.getElementById('p-view-gender').innerText = m.gender || '---'; document.getElementById('p-view-seat').innerText = `${s?.name} | #${m.seatNo}`; document.getElementById('p-view-due').innerText = `₹${unpaid}`; document.getElementById('p-view-call').href = "tel:" + m.phone; document.getElementById('p-view-renew').onclick = () => { openRenewModal(mId); }; document.getElementById('p-view-photo').innerHTML = m.photo ? `<img src="${m.photo}" class="w-full h-full object-cover">` : `<i data-lucide="user" class="text-slate-300 w-10 h-10 p-2"></i>`; toggleModalAnim('profile-modal', true); lucide.createIcons(); }
+        
+        function openMemberModal(mId = null) { toggleModalAnim('member-modal', true); const sList = cloudData.library.shifts || localShifts; document.getElementById('m-shift').innerHTML = sList.map(x => `<option value="${x.id}">${x.name}</option>`).join(''); currentPhotoData = null; document.getElementById('m-photo-preview').innerHTML = `<i data-lucide="user" class="text-slate-200 w-12 h-12"></i>`; if(mId) { const m = cloudData.members.find(x => x.id === mId); document.getElementById('member-modal-title').innerText = "Edit Member"; document.getElementById('edit-member-id').value = m.id; document.getElementById('m-name').value = m.name; document.getElementById('m-phone').value = m.phone; document.getElementById('m-gender').value = m.gender || 'Male'; document.getElementById('m-address').value = m.address || ''; document.getElementById('m-start').value = m.start; document.getElementById('m-end').value = m.end; document.getElementById('m-fee').value = m.fee || 0; document.getElementById('m-shift').value = m.shiftId; if(m.photo) { currentPhotoData = m.photo; document.getElementById('m-photo-preview').innerHTML = `<img src="${m.photo}" class="w-full h-full object-cover">`; } populateSeatSelect(); document.getElementById('m-seat').value = m.seatNo; } else { document.getElementById('member-modal-title').innerText = "New Enrollment"; document.getElementById('edit-member-id').value = ""; document.getElementById('m-name').value = ""; document.getElementById('m-address').value = ""; document.getElementById('m-start').value = new Date().toISOString().split('T')[0]; autoEndDate(); populateSeatSelect(); } lucide.createIcons(); }
+        function populateSeatSelect() { const sId = document.getElementById('m-shift').value, sList = cloudData.library.shifts || localShifts, selectedShiftObj = sList.find(x => x.id === sId); if (!selectedShiftObj) return; const cap = parseInt(selectedShiftObj.capacity) || 40, isFullDaySelect = selectedShiftObj.isFullDay; let h = ''; for(let i=1; i<=cap; i++) { const allAssignsForSeat = (cloudData.seatAssignments || []).filter(a => a.seatId === i), curId = document.getElementById('edit-member-id').value, otherAssigns = allAssignsForSeat.filter(a => !curId || a.memberId != curId); let isBlocked = false; if (otherAssigns.length > 0) { if (isFullDaySelect) { isBlocked = true; } else { const hasFullDay = otherAssigns.some(a => { const sh = sList.find(s => s.id === a.shiftId); return sh && sh.isFullDay; }); if (hasFullDay) isBlocked = true; else isBlocked = otherAssigns.some(a => a.shiftId === sId); } } if(!isBlocked) h += `<option value="${i}">Seat #${i}</option>`; } document.getElementById('m-seat').innerHTML = h || '<option value="">No Seats Available!</option>'; }
+        
+        function closeMemberModal() { toggleModalAnim('member-modal', false); stopCamera(); }
+        function closeProfileModal() { toggleModalAnim('profile-modal', false); }
+        function closeInvoiceModal() { document.getElementById('invoice-modal').classList.add('hidden'); }
+        function closeHistoryModal() { document.getElementById('history-modal').classList.add('hidden'); }
+        function autoEndDate() { const s = document.getElementById('m-start').value; if(!s) return; let d = new Date(s); d.setMonth(d.getMonth()+1); document.getElementById('m-end').value = d.toISOString().split('T')[0]; }
+        
+        function updateExpiringSoon() { const today = new Date().toISOString().split('T')[0]; const expiring = (cloudData.members || []).filter(m => { const diff = (new Date(m.end) - new Date())/(1000*3600*24); return diff <= 5; }); document.getElementById('expiry-list').innerHTML = expiring.map(m => `<div class="flex items-center justify-between bg-white border border-slate-100 hover:border-rose-200 p-4 rounded-[1.2rem] mb-3 transition shadow-sm group"><div><p class="font-black text-sm text-slate-800">${m.name}</p><p class="text-[9px] font-black tracking-widest ${m.end < today ? 'text-rose-600' : 'text-amber-500'} uppercase mt-0.5">EXPIRES: ${m.end}</p></div><div class="flex gap-1 opacity-0 group-hover:opacity-100 transition"><button onclick="openRenewModal(${m.id})" class="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl transition"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button><button onclick="sendWhatsAppReminder(${m.id})" class="p-2 bg-green-50 text-green-600 hover:bg-green-500 hover:text-white rounded-xl transition"><i data-lucide="message-circle" class="w-4 h-4"></i></button></div></div>`).join('') || '<div class="text-center py-10 opacity-50"><i data-lucide="shield-check" class="w-12 h-12 mx-auto text-emerald-500 mb-3"></i><p class="font-black text-xs uppercase tracking-widest">All Clear</p></div>'; lucide.createIcons(); }
+        
+        function sendWhatsAppReminder(mId) { const m = cloudData.members.find(x => x.id === mId); window.open(`https://wa.me/91${m.phone}?text=Hello ${m.name}, your library plan for Seat #${m.seatNo} is due. Please renew at the desk.`, '_blank'); }
+        
+        // Minor visual upgrades to shift config
+        function renderShiftConfig() { const s = cloudData.library.shifts || localShifts; document.getElementById('shift-config-list').innerHTML = s.map((x, i) => `<div class="flex gap-3 items-center group"><input type="text" value="${x.name}" onchange="updateShiftName(${i}, this.value)" class="flex-1 p-3.5 bg-white border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-indigo-500 transition" ${x.isFullDay ? 'readonly' : ''}><input type="number" value="${x.capacity}" onchange="updateShiftCapacity(${i}, this.value)" class="w-24 p-3.5 bg-white border border-slate-200 rounded-2xl font-bold text-sm text-center outline-none focus:border-indigo-500 transition" placeholder="Seats">${x.isFullDay ? `<div class="p-3.5 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center w-14"><i data-lucide="lock" class="w-5 h-5"></i></div>` : `<button onclick="deleteShift(${i})" class="p-3.5 text-rose-400 bg-white border border-slate-200 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-2xl w-14 flex items-center justify-center transition"><i data-lucide="trash-2" class="w-5 h-5"></i></button>`}</div>`).join(''); lucide.createIcons(); }
+        function updateShiftName(i, v) { cloudData.library.shifts[i].name = v; } function updateShiftCapacity(i, v) { cloudData.library.shifts[i].capacity = parseInt(v) || 0; } function deleteShift(i) { const s = cloudData.library.shifts; if(s.length > 1 && !s[i].isFullDay) { s.splice(i, 1); renderShiftConfig(); showToast("Shift removed."); } } function addNewShift() { const id = 's' + Date.now(); cloudData.library.shifts.push({id, name: 'New Shift', capacity: 40}); renderShiftConfig(); showToast("New Shift Added"); }
+
+        // Camera Logic kept intact
+        async function startCamera() { try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('camera-video').srcObject = stream; document.getElementById('camera-wrapper').style.display = 'flex'; } catch (err) { showToast("Camera Access Denied", "error"); } }
+        function stopCamera() { if(typeof stream !== 'undefined' && stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('camera-wrapper').style.display = 'none'; }
+        function takeSnapshot() { const v = document.getElementById('camera-video'), c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); currentPhotoData = c.toDataURL('image/jpeg', 0.6); document.getElementById('m-photo-preview').innerHTML = `<img src="${currentPhotoData}" class="w-full h-full object-cover">`; stopCamera(); }
+        function previewFile() { const f = document.getElementById('m-photo-input').files[0], r = new FileReader(); r.onloadend = () => { currentPhotoData = r.result; document.getElementById('m-photo-preview').innerHTML = `<img src="${currentPhotoData}" class="w-full h-full object-cover">`; }; if(f) r.readAsDataURL(f); }
+
+        // Same for ID/Invoice display functions
+        function viewInvoice(id) { const inv = (cloudData.invoices||[]).find(x => x.id === id), m = (cloudData.members||[]).find(x => x.id === inv.memberId); if(!m) return; currentActiveInv = { inv, m }; document.getElementById('inv-member').innerText = m.name; document.getElementById('inv-date').innerText = inv.date; document.getElementById('inv-no').innerText = inv.id; document.getElementById('inv-amount').innerText = "₹" + inv.amount; document.getElementById('inv-total').innerText = "₹" + inv.amount; document.getElementById('inv-period').innerText = `${inv.periodFrom} to ${inv.periodTo}`; document.getElementById('inv-seat-view').innerText = "Seat: #" + m.seatNo; document.getElementById('inv-lib-name-view').innerText = cloudData.library.name || "LIBPRO"; document.getElementById('inv-lib-address').innerText = cloudData.library.address || "Address not provided"; document.getElementById('inv-lib-contact').innerText = `${cloudData.library.phone || ''} ${cloudData.library.phone && cloudData.library.email ? '|' : ''} ${cloudData.library.email || ''}`; const gstElem = document.getElementById('inv-lib-gst'); if(cloudData.library.gst) { gstElem.innerText = "GST: " + cloudData.library.gst; gstElem.classList.remove('hidden'); } else gstElem.classList.add('hidden'); if(cloudData.library.logo) { document.getElementById('inv-logo-container').innerHTML = `<img src="${cloudData.library.logo}" class="w-full h-full object-cover">`; document.getElementById('inv-logo-container').classList.remove('hidden'); document.getElementById('inv-logo-container').classList.add('flex'); } else { document.getElementById('inv-logo-container').classList.add('hidden'); document.getElementById('inv-logo-container').classList.remove('flex'); } if(cloudData.library.upi) { document.getElementById('qr-block').classList.remove('hidden'); document.getElementById('qrcode').innerHTML = ""; new QRCode(document.getElementById("qrcode"), { text: `upi://pay?pa=${cloudData.library.upi}&pn=${cloudData.library.name}&am=${inv.amount}&cu=INR`, width: 64, height: 64 }); } else document.getElementById('qr-block').classList.add('hidden'); document.getElementById('invoice-modal').classList.remove('hidden'); lucide.createIcons(); }
+        function downloadInvoice() { const invArea = document.getElementById('invoice-area'); html2canvas(invArea, { scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `Receipt-${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); showToast("Receipt Saved"); }); }
+        function openIDCard(mId) { const m = cloudData.members.find(x => x.id === mId), s = (cloudData.library.shifts || localShifts).find(sh => sh.id === m.shiftId); document.getElementById('id-card-lib-name').innerText = cloudData.library.name || "LibPro"; document.getElementById('id-card-name').innerText = m.name; document.getElementById('id-card-id').innerText = "ID: " + m.id.toString().slice(-6); document.getElementById('id-card-phone').innerText = m.phone; document.getElementById('id-card-seat').innerText = `${s?.name} | Seat #${m.seatNo}`; document.getElementById('id-card-expiry').innerText = m.end; document.getElementById('id-card-photo').innerHTML = m.photo ? `<img src="${m.photo}" class="w-full h-full object-cover">` : `<i data-lucide="user" class="text-slate-300 w-10 h-10"></i>`; document.getElementById('id-card-qr').innerHTML = ""; new QRCode(document.getElementById("id-card-qr"), { text: `LIBPRO-MEMBER-${m.id}`, width: 50, height: 50 }); if(cloudData.library.logo) { document.getElementById('id-card-top-logo').innerHTML = `<img src="${cloudData.library.logo}" class="w-full h-full object-cover p-1">`; document.getElementById('id-card-top-logo').classList.remove('hidden'); document.getElementById('id-card-top-logo').classList.add('flex'); } else { document.getElementById('id-card-top-logo').classList.add('hidden'); document.getElementById('id-card-top-logo').classList.remove('flex'); } document.getElementById('id-card-modal').classList.remove('hidden'); lucide.createIcons(); }
+        function downloadIDCard() { const card = document.getElementById('id-card-preview'); html2canvas(card, {scale: 2}).then(canvas => { const link = document.createElement('a'); link.download = `ID-Card-${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); showToast("ID Card Saved"); }); }
+        function renderRevenueMonths() { const monthMap = {}; (cloudData.invoices || []).filter(i => i.status === 'Paid').forEach(inv => { const d = new Date(inv.date), key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`; if (!monthMap[key]) monthMap[key] = { total: 0, count: 0, name: d.toLocaleString('default', { month: 'long', year: 'numeric' }) }; monthMap[key].total += Number(inv.amount); monthMap[key].count++; }); const grid = document.getElementById('month-grid'); grid.innerHTML = Object.keys(monthMap).sort().reverse().map(key => `<div onclick="showMonthDetail('${key}')" class="bg-white p-8 rounded-[2.5rem] border border-slate-100 cursor-pointer hover:scale-105 hover:shadow-xl transition-all border-l-[6px] border-l-emerald-500 shadow-sm group"><p class="text-[10px] uppercase font-black text-slate-400 group-hover:text-emerald-500 transition">${key}</p><h3 class="text-2xl font-black text-slate-800 tracking-tight">${monthMap[key].name}</h3><div class="flex justify-between items-end mt-8"><div><p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Transactions</p><p class="font-black text-xl">${monthMap[key].count}</p></div><div class="text-right text-emerald-500"><p class="text-[9px] font-bold uppercase tracking-widest">Collection</p><p class="text-3xl font-black">₹${monthMap[key].total}</p></div></div></div>`).join('') || '<p class="col-span-full text-center py-10 font-bold text-slate-300">No Revenue Data Found</p>'; }
+        function showMonthDetail(key) { const filtered = cloudData.invoices.filter(i => i.status === 'Paid' && i.date.startsWith(key)); document.getElementById('selected-month-name').innerText = new Date(key + "-01").toLocaleString('default', { month: 'long', year: 'numeric' }); document.getElementById('selected-month-total').innerText = '₹' + filtered.reduce((a, b) => a + Number(b.amount), 0); document.getElementById('month-transaction-list').innerHTML = filtered.map(inv => { const m = (cloudData.members||[]).find(x => x.id === inv.memberId); return `<tr class="hover:bg-slate-50 transition border-b border-slate-100"><td class="px-8 py-6 font-black text-slate-800 text-base">${m?.name || '---'}</td><td class="px-8 py-6 text-emerald-600 font-black text-lg">₹${inv.amount}</td><td class="px-8 py-6 text-right"><button onclick="viewInvoice('${inv.id}')" class="p-3 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl transition shadow-sm"><i data-lucide="printer" class="w-4 h-4"></i></button></td></tr>`; }).join(''); document.getElementById('month-detail-view').classList.remove('hidden'); document.getElementById('month-detail-view').scrollIntoView({ behavior: 'smooth' }); lucide.createIcons(); }
+        function shareWhatsApp() { if(!currentActiveInv) return; const text = `*${cloudData.library.name} - Payment Receipt*%0A---------------------------%0AMember: ${currentActiveInv.m.name}%0AAmount: ₹${currentActiveInv.inv.amount}%0ADate: ${currentActiveInv.inv.date}%0APeriod: ${currentActiveInv.inv.periodFrom} to ${currentActiveInv.inv.periodTo}%0AStatus: PAID%0A---------------------------%0AThank you!`; window.open(`https://wa.me/91${currentActiveInv.m.phone}?text=${text}`, '_blank'); showToast("WhatsApp Opened"); }
+
+        window.onload = () => { 
+            const authCheck = auth.onAuthStateChanged(user => { 
+                if(user) { userUid = user.uid; loadUserCloudData(); } 
+                else { toggleLoader(false); switchAuth('login'); } 
+            });
+            setTimeout(() => { if (document.getElementById('loader').style.display !== 'none' && !userUid) { toggleLoader(false); switchAuth('login'); } }, 3000); 
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
