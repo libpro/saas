@@ -130,6 +130,25 @@
                     <button onclick="submitPublicEnquiry()" class="w-full mt-4 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-200 active:scale-95 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">Submit Walk-in Request <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
                 </div>
             </section>
+
+            <section class="bg-white p-6 md:p-8 rounded-[3rem] border border-slate-100 shadow-sm" id="public-helpdesk-area">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center"><i data-lucide="life-buoy" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800">Report an Issue</h2>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Feedback & Complaints</p>
+                    </div>
+                </div>
+                <div class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Your Mobile No.</label><input type="text" id="pub-hd-phone" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-rose-500 transition-all" placeholder="Registered mobile number"></div>
+                        <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Priority Level</label><select id="pub-hd-priority" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-rose-500 transition-all"><option value="Low">Low (Can wait)</option><option value="Medium" selected>Medium (Needs attention)</option><option value="High">High (Urgent)</option></select></div>
+                    </div>
+                    <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Issue Category</label><select id="pub-hd-category" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-rose-500 transition-all"><option value="Internet / WiFi">Internet / WiFi</option><option value="AC / Cooling">AC / Cooling</option><option value="Cleanliness">Cleanliness</option><option value="Noise / Disturbance">Noise / Disturbance</option><option value="Other">Other</option></select></div>
+                    <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Describe Issue</label><textarea id="pub-hd-message" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-rose-500 transition-all resize-none h-20" placeholder="Elaborate your problem..."></textarea></div>
+                    <button onclick="submitHelpdesk()" class="w-full mt-4 py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg shadow-rose-200 active:scale-95 hover:bg-rose-600 transition-all flex items-center justify-center gap-2">Submit Ticket <i data-lucide="send" class="w-4 h-4"></i></button>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -192,20 +211,24 @@
             <div class="flex items-center gap-3 md:gap-5">
                 <div class="relative">
                     <button onclick="toggleMenu()" class="p-3 bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-full transition-all duration-300 border border-slate-200 hover:border-indigo-200"><i data-lucide="grid" class="w-5 h-5"></i></button>
-                    <div id="floating-menu" class="absolute right-0 mt-4 w-64 bg-white border border-slate-100 rounded-[2rem] shadow-2xl p-3 space-y-1">
-                        <button onclick="navTo('dashboard')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</button>
-                        <button onclick="navTo('attendance')" class="w-full flex items-center gap-3 px-4 py-3.5 text-indigo-600 bg-indigo-50 rounded-2xl font-bold transition"><i data-lucide="scan" class="w-5 h-5"></i> Smart Attendance</button>
-                        <button onclick="navTo('enquiries')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="headset" class="w-5 h-5"></i> Enquiries CRM</button>
-                        <button onclick="navTo('notices')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-orange-50 rounded-2xl font-bold text-orange-600 transition"><i data-lucide="bell" class="w-5 h-5"></i> Notice Board</button>
-                        <button onclick="navTo('seats')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="armchair" class="w-5 h-5"></i> Seat Matrix</button>
-                        <button onclick="navTo('lockers')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-amber-50 rounded-2xl font-bold text-amber-600 transition"><i data-lucide="box" class="w-5 h-5"></i> Locker System</button>
-                        <button onclick="navTo('members')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="users" class="w-5 h-5"></i> Members Hub</button>
-                        <button onclick="navTo('billing')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="receipt" class="w-5 h-5"></i> Payment Ledger</button>
-                        <button onclick="navTo('expenses')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-rose-50 rounded-2xl font-bold text-rose-600 transition"><i data-lucide="wallet" class="w-5 h-5"></i> Expense Manager</button>
-                        <button onclick="navTo('revenue-analytics')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-emerald-50 rounded-2xl font-bold text-emerald-600 transition"><i data-lucide="trending-up" class="w-5 h-5"></i> Financials</button>
-                        <button onclick="navTo('settings')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 rounded-2xl font-bold text-slate-700 transition"><i data-lucide="settings" class="w-5 h-5"></i> Settings</button>
-                        <div class="h-px bg-slate-100 my-2 mx-2"></div>
-                        <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3.5 text-rose-500 font-bold hover:bg-rose-50 rounded-2xl transition"><i data-lucide="log-out" class="w-5 h-5"></i> Logout System</button>
+                    <div id="floating-menu" class="absolute right-0 mt-4 w-56 bg-white border border-slate-100 rounded-[2rem] shadow-2xl p-2 space-y-1 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <button onclick="navTo('dashboard')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl font-bold text-sm text-slate-700 transition"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</button>
+                        <button onclick="navTo('attendance')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl font-bold text-sm text-indigo-600 bg-indigo-50 transition"><i data-lucide="scan" class="w-4 h-4"></i> Attendance</button>
+                        <button onclick="navTo('enquiries')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl font-bold text-sm text-slate-700 transition"><i data-lucide="headset" class="w-4 h-4"></i> Lead CRM</button>
+                        <button onclick="navTo('notices')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-orange-50 rounded-xl font-bold text-sm text-orange-600 transition"><i data-lucide="bell" class="w-4 h-4"></i> Notices</button>
+                        <button onclick="navTo('books')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 rounded-xl font-bold text-sm text-blue-600 transition"><i data-lucide="book-open" class="w-4 h-4"></i> Materials</button>
+                        
+                        <button onclick="navTo('cafe')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-amber-50 rounded-xl font-bold text-sm text-amber-600 transition"><i data-lucide="coffee" class="w-4 h-4"></i> Mini Cafe</button>
+
+                        <button onclick="navTo('seats')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl font-bold text-sm text-slate-700 transition"><i data-lucide="armchair" class="w-4 h-4"></i> Seat Matrix</button>
+                        <button onclick="navTo('lockers')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl font-bold text-sm text-slate-700 transition"><i data-lucide="box" class="w-4 h-4"></i> Lockers</button>
+                        <button onclick="navTo('members')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl font-bold text-sm text-slate-700 transition"><i data-lucide="users" class="w-4 h-4"></i> Members</button>
+                        <button onclick="navTo('billing')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl font-bold text-sm text-slate-700 transition"><i data-lucide="receipt" class="w-4 h-4"></i> Billing</button>
+                        <button onclick="navTo('expenses')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-rose-50 rounded-xl font-bold text-sm text-rose-600 transition"><i data-lucide="wallet" class="w-4 h-4"></i> Expenses</button>
+                        <button onclick="navTo('revenue-analytics')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-emerald-50 rounded-xl font-bold text-sm text-emerald-600 transition"><i data-lucide="trending-up" class="w-4 h-4"></i> Analytics</button>
+                        <button onclick="navTo('settings')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl font-bold text-sm text-slate-700 transition"><i data-lucide="settings" class="w-4 h-4"></i> Settings</button>
+                        <div class="h-px bg-slate-100 my-1 mx-2"></div>
+                        <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-3 py-2.5 text-rose-500 font-bold text-sm hover:bg-rose-50 rounded-xl transition"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</button>
                     </div>
                 </div>
             </div>
@@ -219,8 +242,14 @@
                         <h2 class="text-3xl font-black tracking-tight text-slate-800">Hub Analytics</h2>
                         <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Real-time Library Overview</p>
                     </div>
-                    <div class="flex gap-3 w-full md:w-auto">
+                    <div class="flex gap-3 w-full md:w-auto flex-wrap">
                         <button onclick="navTo('attendance')" class="bg-indigo-50 text-indigo-600 px-6 py-3 rounded-2xl font-black shadow-sm hover:bg-indigo-100 transition-all flex items-center gap-2"><i data-lucide="scan" class="w-5 h-5"></i> Scanner</button>
+                        
+                        <button onclick="navTo('helpdesk')" class="bg-rose-50 text-rose-600 px-6 py-3 rounded-2xl font-black shadow-sm hover:bg-rose-100 transition-all flex items-center gap-2 relative">
+                            <i data-lucide="life-buoy" class="w-5 h-5"></i> Helpdesk
+                            <span id="dash-tkt-badge" class="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full shadow-lg hidden">0</span>
+                        </button>
+
                         <button onclick="navTo('revenue-analytics')" class="bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black shadow-lg shadow-emerald-200 flex items-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all"><i data-lucide="bar-chart-3" class="w-5 h-5"></i> Full Reports</button>
                     </div>
                 </div>
@@ -251,6 +280,66 @@
                             <button onclick="bulkWhatsAppNotify()" class="bg-green-50 text-green-600 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-white transition flex items-center gap-1 shadow-sm"><i data-lucide="message-square" class="w-3 h-3"></i> Bulk Alert</button>
                         </div>
                         <div id="expiry-list" class="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-cafe" class="view-section max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-slate-800">Mini Cafe & Extras</h2>
+                        <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Track Tea, Coffee & Printout Sales</p>
+                    </div>
+                    <div class="flex gap-3 w-full md:w-auto">
+                        <div class="bg-amber-50 border border-amber-100 text-amber-700 px-6 py-3.5 rounded-2xl font-black flex items-center gap-2">
+                            Total: <span id="cafe-total-view">₹0</span>
+                        </div>
+                        <button onclick="openCafeModal()" class="bg-amber-500 text-white px-6 py-3.5 rounded-2xl font-black shadow-lg shadow-amber-200 hover:bg-amber-600 active:scale-95 transition-all flex items-center gap-2"><i data-lucide="coffee" class="w-5 h-5"></i> Add Sale</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 overflow-x-auto shadow-sm">
+                    <table class="w-full text-left text-sm min-w-[800px]">
+                        <thead class="bg-slate-50/50 border-b border-slate-100"><tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest"><th class="px-8 py-6">Date & Time</th><th class="px-8 py-6">Item Description</th><th class="px-8 py-6">Member (Optional)</th><th class="px-8 py-6 text-amber-600 font-black">Amount</th><th class="px-8 py-6 text-right">Action</th></tr></thead>
+                        <tbody id="cafe-list" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-books" class="view-section max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-slate-800">Study Materials</h2>
+                        <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Library Inventory & Book Issuance</p>
+                    </div>
+                    <div class="flex gap-3 w-full md:w-auto">
+                        <button onclick="openAddBookModal()" class="bg-white border border-slate-200 text-slate-700 px-6 py-3.5 rounded-2xl font-black shadow-sm hover:border-blue-500 hover:text-blue-600 active:scale-95 transition-all flex items-center gap-2"><i data-lucide="plus" class="w-5 h-5"></i> Add Material</button>
+                        <button onclick="openIssueBookModal()" class="bg-blue-600 text-white px-6 py-3.5 rounded-2xl font-black shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2"><i data-lucide="hand-metal" class="w-5 h-5"></i> Issue Book</button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm h-[500px] flex flex-col">
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="font-black text-lg flex items-center gap-2 text-slate-800"><i data-lucide="book" class="w-5 h-5 text-blue-500"></i> Stock / Inventory</h4>
+                        </div>
+                        <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 sticky top-0 z-10"><tr class="text-slate-400 text-[9px] font-black uppercase tracking-widest"><th class="px-4 py-3 rounded-tl-xl">Material Details</th><th class="px-4 py-3 text-center">In Stock</th><th class="px-4 py-3 text-right rounded-tr-xl">Action</th></tr></thead>
+                                <tbody id="book-inventory-list" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm h-[500px] flex flex-col">
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="font-black text-lg flex items-center gap-2 text-slate-800"><i data-lucide="book-check" class="w-5 h-5 text-emerald-500"></i> Currently Issued</h4>
+                        </div>
+                        <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 sticky top-0 z-10"><tr class="text-slate-400 text-[9px] font-black uppercase tracking-widest"><th class="px-4 py-3 rounded-tl-xl">Member & Book</th><th class="px-4 py-3 text-center">Due Date</th><th class="px-4 py-3 text-right rounded-tr-xl">Action</th></tr></thead>
+                                <tbody id="issued-books-list" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -321,6 +410,21 @@
                     <table class="w-full text-left text-sm min-w-[900px]">
                         <thead class="bg-slate-50/50 border-b border-slate-100"><tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest"><th class="px-8 py-6">Date</th><th class="px-8 py-6">Prospect Details</th><th class="px-8 py-6">Target Shift</th><th class="px-8 py-6">Status</th><th class="px-8 py-6 text-right">Actions</th></tr></thead>
                         <tbody id="enquiry-list" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-helpdesk" class="view-section max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-slate-800">Support Desk</h2>
+                        <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Student Complaints & Feedback via Portal</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 overflow-x-auto shadow-sm">
+                    <table class="w-full text-left text-sm min-w-[900px]">
+                        <thead class="bg-slate-50/50 border-b border-slate-100"><tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest"><th class="px-8 py-6">Date & Priority</th><th class="px-8 py-6">Student Info</th><th class="px-8 py-6">Category & Issue</th><th class="px-8 py-6">Status & Notes</th><th class="px-8 py-6 text-right">Action</th></tr></thead>
+                        <tbody id="helpdesk-list" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </section>
@@ -463,7 +567,7 @@
                             <input type="text" id="set-public-link" readonly class="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-500">
                             <button onclick="copyPublicLink()" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all" title="Copy Link"><i data-lucide="copy" class="w-5 h-5"></i></button>
                         </div>
-                        <p class="text-[10px] font-bold text-slate-400 mt-3 uppercase tracking-widest">Share this link with students for live seats, amenities, notices and enquiries.</p>
+                        <p class="text-[10px] font-bold text-slate-400 mt-3 uppercase tracking-widest">Share this link with students for live seats, amenities, notices, support and enquiries.</p>
                     </div>
 
                     <div class="bg-white p-8 md:p-10 rounded-[3rem] border border-slate-100 shadow-sm">
@@ -531,6 +635,61 @@
         </main>
     </div>
 
+    <div id="cafe-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div id="cf-modal-box" class="bg-white rounded-[3rem] max-w-sm w-full p-10 shadow-2xl transform transition-transform duration-300 scale-95 origin-center">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-2xl font-black tracking-tight text-slate-800">Add Sale</h3>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Cafe & Add-ons</p>
+                </div>
+                <button onclick="closeCafeModal()" class="p-2 bg-slate-50 text-slate-500 rounded-full hover:bg-slate-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-5">
+                <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Select Item</label><select id="cf-item" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-amber-500 transition-all"><option value="Tea">Tea</option><option value="Coffee">Coffee</option><option value="Water Bottle">Water Bottle</option><option value="Printout">Printout / Xerox</option><option value="Other">Other Custom Item</option></select></div>
+                <div><label class="text-[10px] font-black uppercase text-amber-500 ml-1">Amount (₹)</label><input type="number" id="cf-amount" class="w-full bg-amber-50 p-4 rounded-2xl font-black text-xl text-amber-700 outline-none border border-amber-100 focus:border-amber-500 transition-all placeholder:text-amber-300" placeholder="0.00"></div>
+                <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Select Member (Optional)</label><select id="cf-member" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-amber-500 transition-all"></select></div>
+            </div>
+            <button onclick="saveCafe()" class="w-full mt-8 py-4 bg-amber-500 text-white rounded-2xl font-black shadow-lg shadow-amber-200 active:scale-95 hover:bg-amber-600 transition-all flex items-center justify-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Record Sale</button>
+        </div>
+    </div>
+
+    <div id="add-book-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div id="book-add-box" class="bg-white rounded-[3rem] max-w-sm w-full p-10 shadow-2xl transform transition-transform duration-300 scale-95 origin-center">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-2xl font-black tracking-tight text-slate-800">Add Material</h3>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Update Library Stock</p>
+                </div>
+                <button onclick="closeAddBookModal()" class="p-2 bg-slate-50 text-slate-500 rounded-full hover:bg-slate-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-5">
+                <input type="hidden" id="bk-id">
+                <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Title / Name</label><input type="text" id="bk-title" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-blue-500 transition-all" placeholder="e.g. Lucent GK / Pratiyogita Darpan"></div>
+                <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Type</label><select id="bk-type" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-blue-500 transition-all"><option value="Book">Standard Book</option><option value="Magazine">Magazine / Current Affairs</option><option value="PYQ">PYQ / Test Paper</option><option value="Misc">Miscellaneous</option></select></div>
+                <div><label class="text-[10px] font-black uppercase text-blue-500 ml-1">Total Quantity Adding</label><input type="number" id="bk-qty" class="w-full bg-blue-50 p-4 rounded-2xl font-black text-xl text-blue-700 outline-none border border-blue-100 focus:border-blue-500 transition-all placeholder:text-blue-300" placeholder="1"></div>
+            </div>
+            <button onclick="saveBook()" class="w-full mt-8 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-200 active:scale-95 hover:bg-blue-700 transition-all">Save to Stock</button>
+        </div>
+    </div>
+
+    <div id="issue-book-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div id="book-issue-box" class="bg-white rounded-[3rem] max-w-sm w-full p-10 shadow-2xl transform transition-transform duration-300 scale-95 origin-center">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-2xl font-black tracking-tight text-slate-800">Issue Book</h3>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Assign material to member</p>
+                </div>
+                <button onclick="closeIssueBookModal()" class="p-2 bg-slate-50 text-slate-500 rounded-full hover:bg-slate-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-5">
+                <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Select Member</label><select id="ib-member" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-indigo-500 transition-all"></select></div>
+                <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Select Material (Available Stock Only)</label><select id="ib-book" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-indigo-500 transition-all"></select></div>
+                <div><label class="text-[10px] font-black uppercase text-rose-500 ml-1">Expected Return Date</label><input type="date" id="ib-return" class="w-full bg-rose-50 text-rose-600 p-4 rounded-2xl font-bold text-sm outline-none border border-rose-100 focus:border-rose-500 transition-all"></div>
+            </div>
+            <button onclick="saveIssueBook()" class="w-full mt-8 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-200 active:scale-95 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"><i data-lucide="hand-metal" class="w-4 h-4"></i> Confirm Issue</button>
+        </div>
+    </div>
+
     <div id="notice-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
         <div id="not-modal-box" class="bg-white rounded-[3rem] max-w-md w-full p-10 shadow-2xl transform transition-transform duration-300 scale-95 origin-center">
             <div class="flex justify-between items-center mb-8">
@@ -547,6 +706,23 @@
                 <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Description</label><textarea id="not-content" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-orange-500 transition-all h-24 resize-none" placeholder="Provide more details..."></textarea></div>
             </div>
             <button onclick="saveNotice()" class="w-full mt-8 py-4 bg-orange-500 text-white rounded-2xl font-black shadow-lg shadow-orange-200 active:scale-95 hover:bg-orange-600 transition-all flex items-center justify-center gap-2"><i data-lucide="send" class="w-5 h-5"></i> Publish Notice</button>
+        </div>
+    </div>
+
+    <div id="ticket-resolve-modal" class="fixed inset-0 bg-slate-900/40 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div id="tkt-modal-box" class="bg-white rounded-[3rem] max-w-sm w-full p-10 shadow-2xl transform transition-transform duration-300 scale-95 origin-center">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-2xl font-black tracking-tight text-slate-800">Resolve Issue</h3>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Add resolution note</p>
+                </div>
+                <button onclick="closeTicketModal()" class="p-2 bg-slate-50 text-slate-500 rounded-full hover:bg-slate-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-5">
+                <input type="hidden" id="res-tkt-id">
+                <div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">Action Taken (Optional)</label><textarea id="res-tkt-note" class="w-full bg-slate-50 p-4 rounded-2xl font-bold text-sm outline-none border border-slate-200 focus:border-emerald-500 transition-all resize-none h-24" placeholder="How was this fixed?"></textarea></div>
+                <button onclick="confirmResolveTicket()" class="w-full mt-4 py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg shadow-emerald-200 active:scale-95 hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Mark as Resolved</button>
+            </div>
         </div>
     </div>
 
@@ -825,6 +1001,10 @@
         function closeHistoryModal() { toggleModalAnim('history-modal', false); }
         function closeEnquiryModal() { toggleModalAnim('enquiry-modal', false); }
         function closeNoticeModal() { toggleModalAnim('notice-modal', false); }
+        function closeTicketModal() { toggleModalAnim('ticket-resolve-modal', false); }
+        function closeAddBookModal() { toggleModalAnim('add-book-modal', false); }
+        function closeIssueBookModal() { toggleModalAnim('issue-book-modal', false); }
+        function closeCafeModal() { toggleModalAnim('cafe-modal', false); }
 
         function switchAuth(t) { 
             document.getElementById('login-card').classList.toggle('hidden', t!=='login'); 
@@ -878,7 +1058,6 @@
                     document.getElementById('pub-header-logo').innerHTML = `<i data-lucide="library" class="w-6 h-6 text-indigo-500"></i>`;
                 }
 
-                // Render Notices
                 const noticeArea = document.getElementById('public-notices-area');
                 if (notices.length > 0) {
                     noticeArea.style.display = 'block';
@@ -893,7 +1072,6 @@
                     noticeArea.style.display = 'none';
                 }
 
-                // Render Facilities
                 const facArea = document.getElementById('public-facilities-area');
                 if (facilities.length > 0) {
                     facArea.style.display = 'block';
@@ -960,12 +1138,36 @@
             });
         }
 
+        function submitHelpdesk() {
+            const phone = document.getElementById('pub-hd-phone').value;
+            const category = document.getElementById('pub-hd-category').value;
+            const priority = document.getElementById('pub-hd-priority').value;
+            const message = document.getElementById('pub-hd-message').value;
+            const uid = new URLSearchParams(window.location.search).get('portal');
+            
+            if(!phone || !message) return showToast("Phone number and message are required!", "error");
+            
+            toggleLoader(true);
+            const hdRef = db.ref('users/' + uid + '/helpdesk');
+            hdRef.once('value', snap => {
+                let tickets = snap.val() || [];
+                if(!Array.isArray(tickets)) tickets = Object.values(tickets);
+                tickets.push({
+                    id: 'TKT-' + Date.now(), phone: phone, category: category, priority: priority, message: message,
+                    status: 'Open', resolutionNote: '', date: new Date().toISOString().split('T')[0]
+                });
+                hdRef.set(tickets).then(() => {
+                    toggleLoader(false);
+                    document.getElementById('pub-hd-message').value = '';
+                    showToast("Ticket Submitted! The admin has been notified.", "success");
+                });
+            });
+        }
+
         function copyPublicLink() {
             const link = document.getElementById('set-public-link').value;
             navigator.clipboard.writeText(link).then(() => showToast("Public Link Copied! Share it with students.", "success"));
         }
-        // --- END PUBLIC PORTAL LOGIC ---
-
 
         // Firebase Auth & Load
         function handleLogin() {
@@ -984,7 +1186,7 @@
                 const data = { 
                     owner: document.getElementById('reg-owner').value, email: e, 
                     library: { name: document.getElementById('reg-lib-name').value, ownerName: document.getElementById('reg-owner').value, email: e, phone: document.getElementById('reg-phone').value, address: '', upi: '', gst: '', aadhar: '', logo: '', subPlan: 'Basic', subStart: new Date().toISOString().split('T')[0], subEnd: '', shifts: localShifts, autoRelease: false, lockers: 0, facilities: ['High-Speed WiFi', 'Fully AC', 'RO Drinking Water', 'CCTV Security'] }, 
-                    members: [], seatAssignments: [], invoices: [], expenses: [], attendance: [], enquiries: [], notices: [] 
+                    members: [], seatAssignments: [], invoices: [], expenses: [], attendance: [], enquiries: [], notices: [], helpdesk: [], books: [], issuedBooks: [], cafeSales: [] 
                 };
                 db.ref('users/' + userUid).set(data).then(() => { showToast("System Initialized!"); location.reload(); });
             }).catch(err => { showToast(err.message, "error"); toggleLoader(false); });
@@ -1108,7 +1310,6 @@
             setVal('set-lib-lockers', lib.lockers || '');
             setVal('set-lib-facilities', (lib.facilities || []).join(', '));
             
-            // Set Public Link Generator
             if(document.getElementById('set-public-link')) {
                 document.getElementById('set-public-link').value = window.location.origin + window.location.pathname + '?portal=' + userUid;
             }
@@ -1137,7 +1338,316 @@
             renderAttendance(); 
             renderEnquiries();
             renderNotices();
+            renderHelpdesk();
+            renderBooks();
+            renderCafe();
             safeLucide();
+        }
+
+        // --- CAFE & ADD-ONS (NEW) ---
+        function openCafeModal() {
+            const mList = getSafeList(cloudData.members);
+            document.getElementById('cf-item').value = 'Tea';
+            document.getElementById('cf-amount').value = '';
+            document.getElementById('cf-member').innerHTML = `<option value="">-- Walk-in / Cash --</option>` + mList.map(m => `<option value="${m.id}">${m.name} (Seat #${m.seatNo})</option>`).join('');
+            toggleModalAnim('cafe-modal', true);
+        }
+
+        function saveCafe() {
+            const item = document.getElementById('cf-item').value;
+            const amount = Number(document.getElementById('cf-amount').value);
+            const memberId = document.getElementById('cf-member').value;
+
+            if(!amount || amount <= 0) return showToast("Enter a valid amount!", "error");
+
+            cloudData.cafeSales = getSafeList(cloudData.cafeSales);
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            cloudData.cafeSales.push({
+                id: 'CF-' + Date.now(),
+                item: item,
+                amount: amount,
+                memberId: memberId ? parseInt(memberId) : null,
+                date: dateStr,
+                time: timeStr
+            });
+
+            // Add to main revenue/invoices so it reflects in global reports
+            cloudData.invoices = getSafeList(cloudData.invoices);
+            cloudData.invoices.push({
+                id: 'REC-' + Date.now(),
+                memberId: memberId ? parseInt(memberId) : 0, // 0 for walkin
+                amount: amount,
+                status: 'Paid',
+                date: dateStr,
+                periodFrom: 'Cafe/Add-on',
+                periodTo: item
+            });
+
+            saveToCloud(); closeCafeModal(); refreshUI(); showToast(`Sale Recorded: ₹${amount}`);
+        }
+
+        function deleteCafeSale(id, amt) {
+            if(confirm("Delete this sale record?")) {
+                cloudData.cafeSales = getSafeList(cloudData.cafeSales).filter(x => x.id !== id);
+                saveToCloud(); refreshUI(); showToast("Sale Removed");
+            }
+        }
+
+        function renderCafe() {
+            if (!cloudData) return;
+            const sales = getSafeList(cloudData.cafeSales).sort((a,b) => {
+                if (a.date === b.date) return b.id.localeCompare(a.id);
+                return new Date(b.date) - new Date(a.date);
+            });
+            const mList = getSafeList(cloudData.members);
+            
+            const total = sales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
+            setSafeText('cafe-total-view', `₹${total}`);
+
+            document.getElementById('cafe-list').innerHTML = sales.map(s => {
+                const m = s.memberId ? mList.find(x => x.id === s.memberId) : null;
+                const mName = m ? m.name : 'Walk-in / Guest';
+                return `<tr class="hover:bg-slate-50 transition border-b border-slate-100 group">
+                    <td class="px-8 py-6 font-bold text-xs text-slate-500">${s.date} <span class="ml-1 text-[9px] uppercase tracking-widest text-slate-400">${s.time}</span></td>
+                    <td class="px-8 py-6 font-black text-slate-700">${s.item}</td>
+                    <td class="px-8 py-6 text-sm font-bold text-slate-600">${mName}</td>
+                    <td class="px-8 py-6 text-amber-600 font-black text-base">₹${s.amount}</td>
+                    <td class="px-8 py-6 text-right"><button onclick="deleteCafeSale('${s.id}', ${s.amount})" class="p-2.5 bg-white border border-slate-200 hover:border-rose-400 text-rose-500 rounded-xl transition-all shadow-sm"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="5" class="text-center py-12"><div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="coffee" class="w-8 h-8"></i></div><p class="text-slate-400 font-bold uppercase tracking-widest text-xs">No Cafe Sales Yet</p></td></tr>`;
+            safeLucide();
+        }
+
+        // --- BOOKS & RESOURCES LOGIC ---
+        function openAddBookModal(bId = null) {
+            toggleModalAnim('add-book-modal', true);
+            if(bId) {
+                const b = getSafeList(cloudData.books).find(x => x.id === bId);
+                document.getElementById('bk-id').value = b.id;
+                document.getElementById('bk-title').value = b.title;
+                document.getElementById('bk-type').value = b.type || 'Book';
+                document.getElementById('bk-qty').value = b.totalQty;
+            } else {
+                document.getElementById('bk-id').value = '';
+                document.getElementById('bk-title').value = '';
+                document.getElementById('bk-type').value = 'Book';
+                document.getElementById('bk-qty').value = '';
+            }
+        }
+
+        function saveBook() {
+            const id = document.getElementById('bk-id').value;
+            const title = document.getElementById('bk-title').value;
+            const type = document.getElementById('bk-type').value;
+            const qty = parseInt(document.getElementById('bk-qty').value);
+
+            if(!title || isNaN(qty) || qty < 1) return showToast("Title and Valid Quantity are required!", "error");
+
+            cloudData.books = getSafeList(cloudData.books);
+            if(id) {
+                const idx = cloudData.books.findIndex(x => x.id === id);
+                // Calculate difference in qty to update available qty
+                const diff = qty - cloudData.books[idx].totalQty;
+                cloudData.books[idx].title = title;
+                cloudData.books[idx].type = type;
+                cloudData.books[idx].totalQty = qty;
+                cloudData.books[idx].availableQty += diff;
+                showToast("Material Updated!");
+            } else {
+                cloudData.books.push({
+                    id: 'MAT-' + Date.now(),
+                    title, type, totalQty: qty, availableQty: qty
+                });
+                showToast("New Material Added to Stock!");
+            }
+            saveToCloud(); closeAddBookModal(); refreshUI();
+        }
+
+        function deleteBook(id) {
+            const issuedCount = getSafeList(cloudData.issuedBooks).filter(i => i.bookId === id && i.status === 'Issued').length;
+            if(issuedCount > 0) return showToast(`Cannot delete! ${issuedCount} copies are currently issued to members.`, "error");
+
+            if(confirm("Remove this material from inventory?")) {
+                cloudData.books = getSafeList(cloudData.books).filter(b => b.id !== id);
+                saveToCloud(); refreshUI(); showToast("Material Removed");
+            }
+        }
+
+        function openIssueBookModal() {
+            const mList = getSafeList(cloudData.members);
+            const bList = getSafeList(cloudData.books).filter(b => b.availableQty > 0);
+
+            if(mList.length === 0) return showToast("No active members found!", "error");
+            if(bList.length === 0) return showToast("No materials available in stock!", "error");
+
+            document.getElementById('ib-member').innerHTML = mList.map(m => `<option value="${m.id}">${m.name} (${m.phone})</option>`).join('');
+            document.getElementById('ib-book').innerHTML = bList.map(b => `<option value="${b.id}">${b.title} (${b.availableQty} available)</option>`).join('');
+            
+            let nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            document.getElementById('ib-return').value = nextWeek.toISOString().split('T')[0];
+
+            toggleModalAnim('issue-book-modal', true);
+        }
+
+        function saveIssueBook() {
+            const mId = document.getElementById('ib-member').value;
+            const bId = document.getElementById('ib-book').value;
+            const rDate = document.getElementById('ib-return').value;
+
+            if(!mId || !bId || !rDate) return showToast("All fields are required!", "error");
+
+            cloudData.books = getSafeList(cloudData.books);
+            const bIdx = cloudData.books.findIndex(x => x.id === bId);
+            if(cloudData.books[bIdx].availableQty < 1) return showToast("Out of stock!", "error");
+
+            cloudData.issuedBooks = getSafeList(cloudData.issuedBooks);
+            cloudData.issuedBooks.push({
+                id: 'ISS-' + Date.now(),
+                bookId: bId,
+                memberId: parseInt(mId),
+                issueDate: new Date().toISOString().split('T')[0],
+                returnDate: rDate,
+                status: 'Issued'
+            });
+
+            cloudData.books[bIdx].availableQty -= 1;
+            saveToCloud(); closeIssueBookModal(); refreshUI(); showToast("Material Issued Successfully!");
+        }
+
+        function markBookReturned(issId) {
+            if(confirm("Confirm material has been returned in good condition?")) {
+                cloudData.issuedBooks = getSafeList(cloudData.issuedBooks);
+                const issIdx = cloudData.issuedBooks.findIndex(x => x.id === issId);
+                const bId = cloudData.issuedBooks[issIdx].bookId;
+
+                cloudData.issuedBooks[issIdx].status = 'Returned';
+                cloudData.issuedBooks[issIdx].actualReturnDate = new Date().toISOString().split('T')[0];
+
+                cloudData.books = getSafeList(cloudData.books);
+                const bIdx = cloudData.books.findIndex(x => x.id === bId);
+                if(bIdx !== -1) cloudData.books[bIdx].availableQty += 1;
+
+                saveToCloud(); refreshUI(); showToast("Material Returned to Stock!");
+            }
+        }
+
+        function renderBooks() {
+            if(!cloudData) return;
+            const bList = getSafeList(cloudData.books);
+            const iList = getSafeList(cloudData.issuedBooks).filter(i => i.status === 'Issued');
+            const mList = getSafeList(cloudData.members);
+            const today = new Date().toISOString().split('T')[0];
+
+            // Render Inventory
+            document.getElementById('book-inventory-list').innerHTML = bList.map(b => {
+                let badgeClass = b.type === 'Magazine' ? 'bg-orange-50 text-orange-600' : (b.type === 'PYQ' ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600');
+                let stockColor = b.availableQty > 0 ? 'text-emerald-500' : 'text-rose-500';
+                return `<tr class="hover:bg-slate-50 transition border-b border-slate-100 group">
+                    <td class="px-4 py-4">
+                        <div class="font-black text-slate-800 text-sm">${b.title}</div>
+                        <div class="inline-block px-2 py-1 mt-1 rounded text-[9px] font-black uppercase tracking-widest ${badgeClass}">${b.type}</div>
+                    </td>
+                    <td class="px-4 py-4 text-center">
+                        <div class="font-black text-lg ${stockColor}">${b.availableQty} <span class="text-xs text-slate-400">/ ${b.totalQty}</span></div>
+                    </td>
+                    <td class="px-4 py-4 text-right">
+                        <button onclick="openAddBookModal('${b.id}')" class="p-2.5 bg-slate-50 text-slate-600 hover:text-blue-600 rounded-xl transition shadow-sm" title="Edit"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deleteBook('${b.id}')" class="p-2.5 bg-slate-50 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl transition shadow-sm ml-1" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="3" class="text-center py-12"><div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="book-x" class="w-8 h-8"></i></div><p class="text-slate-400 font-bold uppercase tracking-widest text-xs">No Materials in Stock</p></td></tr>`;
+
+            // Render Issued List
+            document.getElementById('issued-books-list').innerHTML = iList.map(iss => {
+                const m = mList.find(x => x.id === iss.memberId);
+                const b = bList.find(x => x.id === iss.bookId);
+                const isOverdue = iss.returnDate < today;
+                
+                return `<tr class="hover:bg-slate-50 transition border-b border-slate-100 group">
+                    <td class="px-4 py-4">
+                        <div class="font-black text-slate-800 text-sm">${m ? m.name : 'Unknown Member'}</div>
+                        <div class="text-[10px] text-blue-600 font-bold mt-0.5"><i data-lucide="book" class="w-3 h-3 inline"></i> ${b ? b.title : 'Deleted Material'}</div>
+                    </td>
+                    <td class="px-4 py-4 text-center">
+                        <div class="font-bold text-xs ${isOverdue ? 'text-rose-600 font-black' : 'text-slate-600'}">${iss.returnDate}</div>
+                        ${isOverdue ? `<div class="text-[9px] font-black uppercase text-rose-500 tracking-widest mt-1">Overdue</div>` : ''}
+                    </td>
+                    <td class="px-4 py-4 text-right">
+                        <button onclick="markBookReturned('${iss.id}')" class="px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition shadow-sm border border-emerald-200">Return</button>
+                    </td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="3" class="text-center py-12"><div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="check-circle" class="w-8 h-8"></i></div><p class="text-slate-400 font-bold uppercase tracking-widest text-xs">No Books Currently Issued</p></td></tr>`;
+            
+            safeLucide();
+        }
+
+        // --- Helpdesk Admin Logic ---
+        function renderHelpdesk() {
+            if (!cloudData) return;
+            const tkts = getSafeList(cloudData.helpdesk).sort((a,b) => {
+                if(a.status === 'Open' && b.status === 'Resolved') return -1;
+                if(a.status === 'Resolved' && b.status === 'Open') return 1;
+                return new Date(b.date) - new Date(a.date);
+            });
+            
+            const openTkts = tkts.filter(t => t.status === 'Open').length;
+            const dashBadge = document.getElementById('dash-tkt-badge');
+            if(dashBadge) {
+                if(openTkts > 0) { dashBadge.innerText = openTkts; dashBadge.classList.remove('hidden'); }
+                else { dashBadge.classList.add('hidden'); }
+            }
+
+            document.getElementById('helpdesk-list').innerHTML = tkts.map(t => {
+                const mList = getSafeList(cloudData.members);
+                const m = mList.find(x => x.phone === t.phone);
+                const name = m ? m.name : 'Unknown / Walk-in';
+                const badge = t.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200';
+                
+                let prioColor = t.priority === 'High' ? 'text-rose-500' : (t.priority === 'Medium' ? 'text-amber-500' : 'text-indigo-500');
+
+                return `<tr class="hover:bg-slate-50 transition border-b border-slate-100 group ${t.status === 'Resolved' ? 'opacity-60' : ''}">
+                    <td class="px-8 py-6"><div class="font-bold text-xs text-slate-500 mb-1">${t.date}</div><div class="text-[9px] font-black uppercase tracking-widest ${prioColor} flex items-center gap-1"><i data-lucide="flag" class="w-3 h-3"></i> ${t.priority || 'Low'}</div></td>
+                    <td class="px-8 py-6"><div class="font-black text-slate-800 text-sm">${name}</div><div class="text-[10px] text-slate-400 font-bold tracking-widest mt-0.5">${t.phone}</div></td>
+                    <td class="px-8 py-6"><div class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">${t.category}</div><div class="text-xs font-bold text-slate-600 max-w-[250px] truncate" title="${t.message}">${t.message}</div></td>
+                    <td class="px-8 py-6">
+                        <div class="inline-block px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${badge} mb-1">${t.status}</div>
+                        ${t.resolutionNote ? `<div class="text-[10px] text-slate-400 italic mt-1 font-bold">" ${t.resolutionNote} "</div>` : ''}
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                        ${t.status !== 'Resolved' ? `<button onclick="openResolveModal('${t.id}')" class="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl transition shadow-sm" title="Mark Resolved"><i data-lucide="check" class="w-4 h-4"></i></button>` : `<button onclick="deleteTicket('${t.id}')" class="p-2.5 bg-slate-50 text-slate-400 hover:bg-rose-500 hover:text-white rounded-xl transition shadow-sm" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`}
+                    </td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="5" class="text-center py-12"><div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="check-circle" class="w-8 h-8"></i></div><p class="text-slate-400 font-bold uppercase tracking-widest text-xs">No Pending Issues. All Good!</p></td></tr>`;
+            safeLucide();
+        }
+
+        function openResolveModal(id) {
+            document.getElementById('res-tkt-id').value = id;
+            document.getElementById('res-tkt-note').value = '';
+            toggleModalAnim('ticket-resolve-modal', true);
+        }
+
+        function confirmResolveTicket() {
+            const id = document.getElementById('res-tkt-id').value;
+            const note = document.getElementById('res-tkt-note').value;
+            cloudData.helpdesk = getSafeList(cloudData.helpdesk);
+            const t = cloudData.helpdesk.find(x => x.id === id);
+            if(t) {
+                t.status = 'Resolved';
+                t.resolutionNote = note || 'Issue resolved by admin.';
+            }
+            saveToCloud(); closeTicketModal(); refreshUI(); showToast("Ticket Marked as Resolved!");
+        }
+        
+        function deleteTicket(id) {
+            if(confirm("Remove this ticket record?")) {
+                cloudData.helpdesk = getSafeList(cloudData.helpdesk).filter(x => x.id !== id);
+                saveToCloud(); refreshUI(); showToast("Ticket Deleted!");
+            }
         }
 
         // --- Notice Board Logic ---
@@ -1723,7 +2233,6 @@
             cloudData.library.autoRelease = document.getElementById('set-auto-release').checked;
             cloudData.library.logo = currentLibLogo;
             
-            // SAVE FACILITIES
             const facString = document.getElementById('set-lib-facilities').value;
             cloudData.library.facilities = facString ? facString.split(',').map(s => s.trim()).filter(Boolean) : [];
             
